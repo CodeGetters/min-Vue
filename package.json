@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "private": "true",
+  "type": "module",
   "scripts": {
     "prepare": "husky",
     "preinstall": "npx only-allow pnpm",
@@ -39,6 +40,7 @@
     "@rollup/plugin-node-resolve": "^15.3.0",
     "cz-git": "^1.9.4",
     "esbuild": "^0.24.0",
+    "execa": "^9.4.0",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
     "minimist": "^1.2.8",
