@@ -1,5 +1,5 @@
 {
-  "name": "mini",
+  "name": "root",
   "version": "1.0.0",
   "description": "",
   "private": "true",
@@ -24,7 +24,8 @@
     ]
   },
   "workspaces": [
-    "packages/*"
+    "packages/vue3/*",
+    "packages/react/*"
   ],
   "engines": {
     "node": ">=18",

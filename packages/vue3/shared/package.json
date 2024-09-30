@@ -1,0 +1,36 @@
+{
+  "name": "@mini/shared",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "module": "dist/shared.esm-bundler.js",
+  "types": "dist/shared.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/shared.d.ts",
+      "node": {
+        "production": "./dist/shared.cjs.prod.js",
+        "development": "./dist/shared.cjs.js",
+        "default": "./index.js"
+      },
+      "module": "./dist/shared.esm-bundler.js",
+      "import": "./dist/shared.esm-bundler.js",
+      "require": "./index.js"
+    },
+    "./*": "./*"
+  },
+  "sideEffects": false,
+  "buildOptions": {
+    "name": "shared",
+    "format": [
+      "cjs",
+      "esm"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
