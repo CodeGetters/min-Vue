@@ -1,5 +1,5 @@
 {
-  "name": "min-vue3",
+  "name": "mini",
   "version": "1.0.0",
   "description": "",
   "private": "true",
@@ -8,7 +8,7 @@
     "prepare": "husky",
     "preinstall": "npx only-allow pnpm",
     "lint-staged": "npx lint-staged",
-    "dev": "node scripts/mini-vue3/dev.js"
+    "dev": "node scripts/dev.js"
   },
   "config": {
     "commitizen": {

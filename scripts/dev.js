@@ -11,11 +11,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const argv = minimist(process.argv.slice(2)); // 路径解析为【project/package】
 console.log("=====执行命令参数======", argv);
 
-const project = argv._[0] || "mini-vue3";
-const target = argv._[1] || "compiler-core";
+const project = argv._[0] || "vue3";
+const target = argv._[1] || "reactivity";
 const format = argv["f"] || "global";
 
-const pkgBase = `../../packages/${project}/${target}`;
+const pkgBase = `../packages/${project}/${target}`;
 console.log("====pkgBase====", pkgBase);
 const pkg = require(resolve(__dirname, `${pkgBase}/package.json`));
 const options = pkg.buildOptions;
