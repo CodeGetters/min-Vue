@@ -1,7 +1,10 @@
 import { ReactiveFlags } from "./constant";
 import { toRawType, isObject } from "@mini/shared";
-import { mutableHandlers } from "./baseHandlers";
-import { mutableCollectionHandlers } from "./collectionHandlers";
+import { mutableHandlers, readonlyHandlers } from "./baseHandlers";
+import {
+  mutableCollectionHandlers,
+  readonlyCollectionHandlers,
+} from "./collectionHandlers";
 
 export interface Target {
   [ReactiveFlags.RAW]?: any;
@@ -10,13 +13,16 @@ export interface Target {
   [ReactiveFlags.IS_READONLY]?: boolean;
   [ReactiveFlags.IS_SHALLOW]?: boolean;
 }
+// 将对象划分为三类
 enum TargetType {
   INVALID = 0,
   COMMON = 1,
   COLLECTION = 2,
 }
 
-const reactiveMap: WeakMap<Target, any> = new WeakMap<Target, any>();
+// WeakMap 只能用对象作为 key，并且会自动进行垃圾回收，避免造成内存泄漏
+export const reactiveMap: WeakMap<Target, any> = new WeakMap<Target, any>();
+export const readonlyMap: WeakMap<Target, any> = new WeakMap<Target, any>();
 
 export function reactive(target: object) {
   if (isReadOnly(target)) {
@@ -29,6 +35,16 @@ export function reactive(target: object) {
     mutableHandlers,
     mutableCollectionHandlers,
     reactiveMap
+  );
+}
+
+export function readonly<T extends object>(target: T) {
+  return createReactiveObject(
+    target,
+    true,
+    readonlyHandlers,
+    readonlyCollectionHandlers,
+    readonlyMap
   );
 }
 

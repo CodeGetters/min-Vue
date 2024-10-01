@@ -6,3 +6,8 @@ export enum ReactiveFlags {
   IS_READONLY = "__v_isReadonly",
   IS_SHALLOW = "__v_isShallow",
 }
+export enum TrackOpTypes {
+  GET = "get",
+  HAS = "has",
+  ITERATE = "iterate",
+}
