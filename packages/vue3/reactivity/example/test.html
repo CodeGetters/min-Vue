@@ -6,6 +6,10 @@
     <title>Document</title>
   </head>
   <body>
-    <script></script>
+    <script src="../dist/reactivity.global.js"></script>
+    <script>
+      const { reactive } = reactivity;
+      const arr = reactive({ val: 1 });
+    </script>
   </body>
 </html>
