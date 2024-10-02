@@ -129,6 +129,23 @@ function getTargetType(value: Target) {
 }
 
 /**
+ * 根据一个 Vue 创建的代理返回其原始对象。
+ * @see {@link https://cn.vuejs.org/api/reactivity-advanced.html#toraw}
+ * @param observed
+ *
+ * @example
+ * ```js
+ * const obj = {}
+ * const reactiveObj = reactive(obj)
+ * console.log(toRaw(reactiveObj) === obj) // true
+ * ````
+ */
+export function toRaw<T>(observed: T): T {
+  const raw = observed && (observed as Target)[ReactiveFlags.RAW];
+  return raw ? toRaw(raw) : observed;
+}
+
+/**
  * 检查一个对象是否是由 reactive()、readonly()、shallowReactive() 或 shallowReadonly() 创建的代理。
  * @param value
  * @see {@link https://cn.vuejs.org/api/reactivity-utilities#isproxy}
@@ -152,4 +169,13 @@ export function isReadOnly(value: unknown): boolean {
  */
 export function isReactive(value: unknown): boolean {
   return !!(value && (value as Target)[ReactiveFlags.IS_REACTIVE]);
+}
+
+/**
+ * 检查对象是否是由 shallowReactive() 或 shallowReadonly() 创建的代理。
+ * @param value
+ * @returns
+ */
+export function isShallow(value: unknown): boolean {
+  return !!(value && (value as Target)[ReactiveFlags.IS_SHALLOW]);
 }

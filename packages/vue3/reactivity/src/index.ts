@@ -1,6 +1,7 @@
 export {
   reactive,
   readonly,
+  toRaw,
   isProxy,
   isReactive,
   isReadOnly,

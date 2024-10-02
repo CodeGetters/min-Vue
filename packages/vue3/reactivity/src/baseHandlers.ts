@@ -1,16 +1,31 @@
-import { isArray, isObject, isSymbol } from "@mini/shared";
-import { ReactiveFlags, TrackOpTypes } from "./constant";
+/**
+ *
+ *
+ *
+ */
 import {
+  hasOwn,
+  isArray,
+  isIntegerKey,
+  isObject,
+  isSymbol,
+} from "@mini/shared";
+import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from "./constant";
+import {
+  isReadOnly,
+  isShallow,
   reactive,
   reactiveMap,
   readonly,
   readonlyMap,
+  toRaw,
   type Target,
 } from "./reactive";
 import { arrayInstrumentations } from "./arrayInstrumentations";
 import { makeMap } from "./makeMap";
-import { track } from "./dep";
+import { ITERATE_KEY, track, trigger } from "./dep";
 import { isRef } from "./ref";
+import { hasChanged } from "@mini/shared/src/general.js";
 
 const isNonTrackableKeys = makeMap(`__proto__,__v_isRef,__isVue`);
 
@@ -25,9 +40,48 @@ const builtInSymbols = new Set(
     .filter(isSymbol)
 );
 
+/**
+ * 实现 ProxyHandler 接口，用于处理响应式对象的基本操作
+ *
+ * @example
+ * ```js
+ * const obj = { name: 'zs', zge: 1 }
+ * const handler = new BaseReactiveHandler()
+ * const proxy = new Proxy(obj, handler)
+ * console.log(proxy.name) // Getting zs!
+ * console.log(proxy.zge) // Getting 1
+ * ```
+ */
 class BaseReactiveHandler implements ProxyHandler<Target> {
-  constructor(protected readonly _isReadonly = false) {}
+  constructor(
+    protected readonly _isReadonly = false,
+    protected readonly _isShallow = false
+  ) {}
 
+  /**
+   * 根据响应式特殊的标记值分别进行相应的处理
+   * 对数组进行特殊处理
+   * 使用 Reflect.get 获取目标对象 key
+   * 在获取属性值时调用 track 进行依赖收集
+   *
+   * @param target 被代理的原始对象
+   * @param key 需要获取的属性名
+   * @param receiver 代理对象本身
+   *
+   * @example
+   * ```js
+   * const obj = { name: 'zs', zge: 1 }
+   * const handler = {
+   *    get: function (target, key, receiver) {
+   *        console.log(`Getting ${key}!`)
+   *        return Reflect.get(target, key, receiver)
+   *    }
+   * }
+   * const proxy = new Proxy(obj, handler)
+   * console.log(proxy.name) // Getting zs!
+   * console.log(proxy.zge) // Getting 1
+   * ```
+   */
   get(target: Target, key: string | symbol, receiver: object): any {
     const isReadOnly = this._isReadonly;
 
@@ -94,11 +148,109 @@ function hasOwnProperty(this: object, key: unknown) {
   if (!isSymbol(key)) {
     key = String(key);
   }
+  const obj = toRaw(this);
+  track(obj, TrackOpTypes.HAS, key);
+  return obj.hasOwnProperty(key as string);
 }
 
-class MutableReactiveHandler extends BaseReactiveHandler {}
+class MutableReactiveHandler extends BaseReactiveHandler {
+  constructor(isShallow = false) {
+    super(false, isShallow);
+  }
 
-class ReadonlyReactiveHandler extends BaseReactiveHandler {}
+  /**
+   *
+   * @param target 需要进行 set 的目标对象
+   * @param key 需要进行 set 的目标对象 key
+   * @param value 修改后 set 后目标对象 key 对应的值
+   * @param receiver 代理对象 proxy
+   * @returns
+   */
+  set(
+    target: Record<string | symbol, unknown>,
+    key: string | symbol,
+    value: unknown,
+    receiver: object
+  ): boolean {
+    let oldValue = target[key];
+    // 边界检查
+    if (!this._isShallow) {
+      const isOldValueReadonly = isReadOnly(oldValue);
+      if (!isShallow(value) && !isReadOnly(value)) {
+        oldValue = toRaw(oldValue);
+        value = toRaw(value);
+      }
+      if (!isArray(target) && isRef(oldValue) && !isRef(value)) {
+        if (isOldValueReadonly) {
+          return false;
+        } else {
+          oldValue.value = value;
+          return true;
+        }
+      }
+    }
+    const hadKey =
+      isArray(target) && isIntegerKey(key) ? Number(key) : hasOwn(target, key);
+    const result = Reflect.set(
+      target,
+      key,
+      value,
+      isRef(target) ? target : receiver
+    );
+    /**
+     * 防止在原型链上的属性被修改时触发响应
+     *
+     * @example
+     * reactiveObj 自身并不存在 foo 属性，
+     * 但其 __proto__ 上存在，
+     * target 为 obj，receiver 为 reactiveObj，toRaw(receiver) 为 obj
+     * 故 target === toRaw(receiver) // true
+     *
+     * ```js
+     * const proto = { foo: 'bar' }
+     * const obj = Object.create(proto) , reactiveObj = reactive(obj)
+     * reactiveObj.foo = 'baz'
+     * ```
+     */
+    if (target === toRaw(receiver)) {
+      if (!hadKey) {
+        trigger(target, TriggerOpTypes.ADD, key, value);
+      } else if (hasChanged(value, oldValue)) {
+        trigger(target, TriggerOpTypes.SET, key, value, oldValue);
+      }
+    }
+    // console.log('触发依赖')
+    return result;
+  }
+
+  // deleteProperty(
+  //   target: Record<string | symbol, unknown>,
+  //   key: string | symbol
+  // ) {}
+
+  // has(target: Record<string | symbol, unknown>, key: string | symbol) {}
+
+  ownKeys(target: Record<string | symbol, undefined>): (string | symbol)[] {
+    track(
+      target,
+      TrackOpTypes.ITERATE,
+      isArray(target) ? "length" : ITERATE_KEY
+    );
+    return Reflect.ownKeys(target);
+  }
+}
+
+class ReadonlyReactiveHandler extends BaseReactiveHandler {
+  constructor(isShallow = false) {
+    super(true, isShallow);
+  }
+  set(target: object, key: string | symbol) {
+    return true;
+  }
+  deleteProperty(target: object, key: string | symbol) {
+    return true;
+  }
+}
 
 export const mutableHandlers: ProxyHandler<object> =
   new MutableReactiveHandler();
