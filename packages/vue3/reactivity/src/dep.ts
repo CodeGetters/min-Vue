@@ -1,8 +1,11 @@
-import { isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
-import { TriggerOpTypes, TrackOpTypes } from "./constant";
+import { extend, isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
+import { TriggerOpTypes } from "./constant";
 import {
   DebuggerEventExtraInfo,
   EffectFlags,
+  ReactiveEffect,
+  ReactiveEffectOptions,
+  ReactiveEffectRunner,
   Subscriber,
   activeSub,
   endBatch,

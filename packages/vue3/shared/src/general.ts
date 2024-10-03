@@ -56,3 +56,5 @@ export function toRawType(value: unknown): string {
 
 export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue);
+
+export const extend: typeof Object.assign = Object.assign;

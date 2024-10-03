@@ -1,3 +1,4 @@
+import { extend } from "@mini/shared";
 import { Link } from "./dep";
 
 let batchDepth = 0;
@@ -16,7 +17,10 @@ export enum EffectFlags {
 }
 
 export type EffectScheduler = (...args: any[]) => any;
-
+export interface ReactiveEffectRunner<T = any> {
+  (): T;
+  effect: ReactiveEffect;
+}
 export type DebuggerEvent = {
   effect: Subscriber;
 } & DebuggerEventExtraInfo;
@@ -163,4 +167,22 @@ function cleanupDeps(sub: Subscriber) {
   while (link) {
     const prev = link.prevDep;
   }
+}
+
+/**
+ * 创建一个响应式副作用函数 effect，在响应式数据发生变化时自动执行某个函数
+ * @param fn 要创建为响应式副作用函数的函数
+ * @param options 创建副作用函数的选项
+ * @returns
+ */
+export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
+  const e = new ReactiveEffect(fn);
+  if (options) {
+    // Object.assign()
+    extend(e, options);
+  }
+  e.run();
+  const runner = e.run.bind(e) as ReactiveEffectRunner;
+  runner.effect = e;
+  return runner;
 }

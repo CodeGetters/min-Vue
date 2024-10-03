@@ -6,14 +6,21 @@
     <title>Document</title>
   </head>
   <body>
+    <button id="btn">reactive测试</button>
     <script src="../dist/reactivity.global.js"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script> -->
     <script>
       // const { reactive } = Vue;
       const { reactive } = reactivity;
       const state = reactive({ key: 1 });
-      state.key2 = 2;
-      console.log(state.key2);
+      const btn = document.getElementById("btn");
+      btn.addEventListener("click", () => {
+        watch();
+      });
+      function watch() {
+        state.key++;
+        console.log(state.key);
+      }
     </script>
   </body>
 </html>
