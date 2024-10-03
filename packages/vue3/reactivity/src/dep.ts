@@ -44,35 +44,6 @@ export class Dep {
       return;
     }
     let link = this.activeLink;
-    if (link === undefined || link.sub !== activeSub) {
-      // link = this.activeLink = new Link(activeSub, this);
-      // if (!activeSub.deps) {
-      //   activeSub.deps = activeSub.depsTail = link;
-      // } else {
-      //   link.prevDep = activeSub.depsTail;
-      //   activeSub.depsTail!.nextDep = link;
-      //   activeSub.depsTail = link;
-      // }
-      // addSub(link);
-    } else if (link.version === -1) {
-      link.version = this.version;
-      if (link.nextDep) {
-        const next = link.nextDep;
-        next.prevDep = link.prevDep;
-        if (link.prevDep) {
-          link.prevDep.nextDep = next;
-        }
-        // link.prevDep = activeSub.depsTail;
-        link.nextDep = undefined;
-        // activeSub.depsTail!.nextDep=link
-        // activeSub.depsTail = link;
-
-        // if (activeSub.deps === link) {
-        //   activeSub.deps = next;
-        // }
-      }
-    }
-
     return link;
   }
   trigger(debugInfo?: DebuggerEventExtraInfo): void {

@@ -4,6 +4,8 @@ import { Dep } from "./dep";
 import {
   Builtin,
   ShallowReactiveMarker,
+  isReadOnly,
+  isShallow,
   reactive,
   toRaw,
   toReactive,
@@ -44,18 +46,14 @@ class RefImpl<T = any> {
     return this._value;
   }
   set value(newValue) {
-    if (hasChanged(newValue, this._rawValue)) {
+    const oldValue = this._rawValue;
+    if (hasChanged(newValue, oldValue)) {
       this._rawValue = newValue;
-      this.value = convert(newValue);
+      this._value = newValue;
       this.dep.trigger();
     }
   }
 }
-
-function convert(value) {
-  return isObject(value) ? reactive(value) : value;
-}
-
 declare const RefSymbol: unique symbol;
 
 export interface Ref<T = any, S = T> {
