@@ -1,27 +1,14 @@
-import { hasChanged } from "@mini/shared";
+import { hasChanged, isObject } from "@mini/shared";
 import { ReactiveFlags } from "./constant";
 import { Dep } from "./dep";
 import {
   Builtin,
   ShallowReactiveMarker,
-  isReadOnly,
-  isShallow,
+  reactive,
   toRaw,
   toReactive,
 } from "./reactive";
 import { IfAny } from "./typeUtils";
-declare const RefSymbol: unique symbol;
-
-export interface Ref<T = any, S = T> {
-  get value(): T;
-  set value(_: S);
-  [RefSymbol]: true;
-}
-
-export function isRef<T>(r: Ref<T> | unknown): r is Ref<T>;
-export function isRef(r: any): r is Ref {
-  return r ? r[ReactiveFlags.IS_REF] === true : false;
-}
 
 export function ref<T>(
   value: T
@@ -57,18 +44,29 @@ class RefImpl<T = any> {
     return this._value;
   }
   set value(newValue) {
-    const oldValue = this._rawValue;
-    const useDirectValue =
-      this[ReactiveFlags.IS_SHALLOW] ||
-      isShallow(newValue) ||
-      isReadOnly(newValue);
-    newValue = useDirectValue ? newValue : toRaw(newValue);
-    if (hasChanged(newValue, oldValue)) {
+    if (hasChanged(newValue, this._rawValue)) {
       this._rawValue = newValue;
-      this.value = useDirectValue ? newValue : toReactive(newValue);
+      this.value = convert(newValue);
       this.dep.trigger();
     }
   }
+}
+
+function convert(value) {
+  return isObject(value) ? reactive(value) : value;
+}
+
+declare const RefSymbol: unique symbol;
+
+export interface Ref<T = any, S = T> {
+  get value(): T;
+  set value(_: S);
+  [RefSymbol]: true;
+}
+
+export function isRef<T>(r: Ref<T> | unknown): r is Ref<T>;
+export function isRef(r: any): r is Ref {
+  return r ? r[ReactiveFlags.IS_REF] === true : false;
 }
 
 export type ShallowUnwrapRef<T> = {

@@ -58,3 +58,11 @@ export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue);
 
 export const extend: typeof Object.assign = Object.assign;
+export const EMPTY_OBJ: { readonly [key: string]: any } = {};
+
+export const remove = <T>(arr: T[], el: T): void => {
+  const i = arr.indexOf(el);
+  if (i > -1) {
+    arr.splice(i, 1);
+  }
+};
