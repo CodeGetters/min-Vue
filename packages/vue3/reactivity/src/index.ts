@@ -9,3 +9,4 @@ export {
 
 export { isRef } from "./ref";
 export { track } from "./dep";
+export { effect } from "./effect";

@@ -1,12 +1,8 @@
-import { extend, isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
 import { TriggerOpTypes } from "./constant";
 import {
   DebuggerEventExtraInfo,
-  EffectFlags,
-  ReactiveEffect,
-  ReactiveEffectOptions,
-  ReactiveEffectRunner,
   Subscriber,
+  activeEffect,
   activeSub,
   endBatch,
   shouldTrack,
@@ -97,25 +93,6 @@ export class Dep {
   }
 }
 
-function addSub(link: Link) {
-  link.dep.sc++;
-  if (link.sub.flags & EffectFlags.TRACKING) {
-    const computed = link.dep.computed;
-    if (computed && !link.dep.subs) {
-      // computed.flags |= EffectFlags.TRACKING | EffectFlags.DIRTY;
-      // for (let l = computed.deps; l; l = l.prevDep) {
-      //   addSub(l);
-      // }
-    }
-    const currentTail = link.dep.subs;
-    if (currentTail !== link) {
-      link.prevSub = currentTail;
-      if (currentTail) currentTail.nextSub = link;
-    }
-    link.dep.subs = link;
-  }
-}
-
 export class Link {
   version: number;
   prevSub?: Link;
@@ -153,15 +130,15 @@ export function track(target: object, key: unknown): void {
     // 获取特定 key 的依赖集合
     let dep = depsMap.get(key);
     if (!dep) {
-      // TODO:
       depsMap.set(key, (dep = new Set()));
-      // dep.map = depsMap;
-      // dep.key = key;
-      depsMap.set(key, dep);
     }
-    // 执行依赖追踪
-    dep.track();
   }
+}
+
+export function trackEffects(dep) {
+  if (dep.has()) return;
+  dep.add(activeEffect);
+  // activeEffect?.deps.push(dep);
 }
 
 /**
@@ -188,98 +165,16 @@ export function trigger(
   oldTarget?: Map<unknown, unknown> | Set<unknown>
 ): void {
   const depsMap = targetMap.get(target);
-  if (!depsMap) {
-    // 从未被追踪过（没有依赖），版本号 + 1（更新状态）后返回
-    globalVersion++;
-    return;
-  }
+  let dep = depsMap?.get(key);
+  triggerEffects(dep);
+}
 
-  const run = (dep: Dep | undefined) => {
-    if (dep) {
-      dep.trigger();
-    }
-  };
-  startBatch();
-  if (type === TriggerOpTypes.CLEAR) {
-    // 响应式对象被清空，触发所有的副作用函数
-    depsMap.forEach(run);
-  } else {
-    const targetIsArray = isArray(target);
-    const isArrayIndex = targetIsArray && isIntegerKey(key);
-    // 看看是不是修改的数组的长度
-    if (targetIsArray && key === "length") {
-      /**
-       * 数组的 length 属性被修改时，找到并执行所有可能受到影响的副作用函数
-       *
-       * @example
-       * ```js
-       * const state = reactive({ arr:[1, 2, 3] })
-       * state.arr.length = 2
-       * // 触发所有依赖于数组的副作用函数
-       * state.arr[2] = undefined
-       * ```
-       */
-      const newLength = Number(newValue);
-      depsMap.forEach((dep, key) => {
-        if (
-          key === "length" ||
-          key === ARRAY_ITERATE_KEY ||
-          (!isSymbol(key) && key >= newLength)
-        ) {
-          run(dep);
-        }
-      });
+export function triggerEffects(dep) {
+  for (const effect of dep) {
+    if (effect.scheduler) {
+      effect.scheduler();
     } else {
-      // 使用 void 0 代表 undefined 好处是 void 0 为 6 byte undefined为 9 byte
-      if (key !== void 0) {
-        run(depsMap.get(key));
-      }
-      if (isArrayIndex) {
-        run(depsMap.get(ARRAY_ITERATE_KEY));
-      }
-
-      switch (type) {
-        case TriggerOpTypes.ADD:
-          /**
-           * 处理对象|Map的添加操作
-           *
-           * @example
-           * ```js
-           * const state = reactive({key1:'key1', key2:'key2', key3:'key3'})
-           * data.key4 = 'key4' // 当添加属性时，直接将 key 作为 iterate_key|map_key_iterate_key 的依赖放进要执行的 effects 中
-           * ```
-           */
-          if (!targetIsArray) {
-            run(depsMap.get(ITERATE_KEY));
-            if (isMap(target)) {
-              run(depsMap.get(MAP_KEY_ITERATE_KEY));
-            }
-          } else if (isArrayIndex) {
-            /**
-             * 处理数组以下标值的添加操作
-             * @example
-             * ```js
-             * const state = reactive({ arr:[1, 2, 3] })
-             * state.arr[3] = 5
-             */
-            run(depsMap.get("length"));
-          }
-          break;
-        case TriggerOpTypes.DELETE:
-          if (!targetIsArray) {
-            run(depsMap.get(ITERATE_KEY));
-            if (isMap(target)) {
-              run(depsMap.get(MAP_KEY_ITERATE_KEY));
-            }
-          }
-          break;
-        case TriggerOpTypes.SET:
-          if (isMap(target)) {
-            run(depsMap.get(ITERATE_KEY));
-          }
-          break;
-      }
+      effect.run();
     }
   }
-  endBatch();
 }

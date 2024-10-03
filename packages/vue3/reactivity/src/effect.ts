@@ -5,6 +5,7 @@ let batchDepth = 0;
 let batchedSub: Subscriber | undefined;
 export let shouldTrack = true;
 export let activeSub: Subscriber | undefined;
+export let activeEffect: ReactiveEffect | undefined;
 
 export enum EffectFlags {
   ACTIVE = 1 << 0,
@@ -55,6 +56,7 @@ export class ReactiveEffect<T = any>
   depsTail?: Link | undefined;
   flags: EffectFlags = EffectFlags.ACTIVE | EffectFlags.TRACKING;
   next?: Subscriber | undefined;
+  active = true;
   cleanup?: () => void = undefined;
   scheduler?: EffectScheduler = undefined;
   constructor(public fn: () => T) {}
@@ -83,7 +85,11 @@ export class ReactiveEffect<T = any>
       this.flags &= ~EffectFlags.RUNNING;
     }
   }
-  stop() {}
+  stop() {
+    if (this.active) {
+      cleanupEffect(this);
+    }
+  }
   trigger(): void {}
   runIfDirty(): void {}
   // get dirty(): boolean {
@@ -173,7 +179,15 @@ function cleanupDeps(sub: Subscriber) {
  * 创建一个响应式副作用函数 effect，在响应式数据发生变化时自动执行某个函数
  * @param fn 要创建为响应式副作用函数的函数
  * @param options 创建副作用函数的选项
- * @returns
+ *
+ * @example
+ * ```js
+ * const count = reactive({a: 1})
+ * const printCount = effect(()=>{
+ *    console.log(count.a)
+ * })
+ * count.value = 1 // 1
+ * count.value = 2 // 2
  */
 export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
   const e = new ReactiveEffect(fn);
