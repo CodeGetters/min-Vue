@@ -198,18 +198,23 @@ class MutableReactiveHandler extends BaseReactiveHandler {
       isRef(target) ? target : receiver
     );
     /**
-     * 防止在原型链上的属性被修改时触发响应
+     * 防止在原型链上的属性被修改时触发响应，以确保不会触发两次
      *
      * @example
-     * reactiveObj 自身并不存在 foo 属性，
-     * 但其 __proto__ 上存在，
-     * target 为 obj，receiver 为 reactiveObj，toRaw(receiver) 为 obj
-     * 故 target === toRaw(receiver) // true
      *
      * ```js
-     * const proto = { foo: 'bar' }
-     * const obj = Object.create(proto) , reactiveObj = reactive(obj)
-     * reactiveObj.foo = 'baz'
+     * const obj = {}
+     * const proto = { a: 1 }
+     * const parent = reactive(proto),child = reactive(obj)
+     * // child.__proto__ = parent
+     * Object.setPrototypeOf(child,parent)
+     *
+     * effect(()=>{
+     *    // child 原对象中并没有 a 属性，但其 __proto__ 中有，所以就会到其原型上找 a 属性
+     *    // 这就导致了触发了两次 trigger（child、parent 都是响应式对象，所以会触发两次）
+     *    // 所以就检查目标对象和代理对象的原型来避免减少触发次数
+     *    console.log(child.a)
+     * })
      * ```
      */
     if (target === toRaw(receiver)) {
