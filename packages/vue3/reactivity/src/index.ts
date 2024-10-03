@@ -7,6 +7,6 @@ export {
   isReadOnly,
 } from "./reactive";
 
-export { isRef } from "./ref";
+export { isRef, ref } from "./ref";
 export { track } from "./dep";
 export { effect } from "./effect";

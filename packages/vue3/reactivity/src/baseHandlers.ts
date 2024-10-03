@@ -11,8 +11,10 @@ import {
   isObject,
   isSymbol,
 } from "@mini/shared";
-import { ReactiveFlags, TriggerOpTypes } from "./constant";
+import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from "./constant";
 import {
+  isReadOnly,
+  isShallow,
   reactive,
   reactiveMap,
   readonly,

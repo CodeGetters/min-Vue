@@ -59,6 +59,9 @@ export function toRaw<T>(observed: T): T {
   return raw ? toRaw(raw) : observed;
 }
 
+export const toReactive = <T extends unknown>(value: T): T =>
+  isObject(value) ? reactive(value as object) : value;
+
 /**
  * 检查一个对象是否是由 reactive()、readonly()、shallowReactive() 或 shallowReadonly() 创建的代理。
  * @param value
@@ -93,3 +96,7 @@ export function isReactive(value: unknown): boolean {
 export function isShallow(value: unknown): boolean {
   return !!(value && (value as Target)[ReactiveFlags.IS_SHALLOW]);
 }
+
+type Primitive = string | number | boolean | bigint | symbol | undefined | null;
+export type Builtin = Primitive | Function | Date | Error | RegExp;
+export declare const ShallowReactiveMarker: unique symbol;

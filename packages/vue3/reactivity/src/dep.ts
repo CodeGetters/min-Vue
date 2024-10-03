@@ -1,8 +1,9 @@
+import { extend, isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
 import { TriggerOpTypes } from "./constant";
 import {
   DebuggerEventExtraInfo,
+  ReactiveEffect,
   Subscriber,
-  activeEffect,
   activeSub,
   endBatch,
   shouldTrack,
@@ -134,11 +135,8 @@ export function track(target: object, key: unknown): void {
     }
   }
 }
-
 export function trackEffects(dep) {
   if (dep.has()) return;
-  dep.add(activeEffect);
-  // activeEffect?.deps.push(dep);
 }
 
 /**
@@ -165,16 +163,101 @@ export function trigger(
   oldTarget?: Map<unknown, unknown> | Set<unknown>
 ): void {
   const depsMap = targetMap.get(target);
-  let dep = depsMap?.get(key);
-  triggerEffects(dep);
-}
+  if (!depsMap) {
+    // 从未被追踪过（没有依赖）
+    return;
+  }
 
-export function triggerEffects(dep) {
-  for (const effect of dep) {
-    if (effect.scheduler) {
-      effect.scheduler();
+  const effects = new Set<ReactiveEffect>();
+  const add = (dep: Set<ReactiveEffect>) => {
+    if (dep) {
+      dep.forEach((effect) => {
+        effects.add(effect);
+      });
+    }
+  };
+  startBatch();
+  depsMap.forEach(add);
+
+  if (type === TriggerOpTypes.CLEAR) {
+    // 响应式对象被清空，触发所有的副作用函数
+  } else {
+    const targetIsArray = isArray(target);
+    const isArrayIndex = targetIsArray && isIntegerKey(key);
+    // 看看是不是修改的数组的长度
+    if (targetIsArray && key === "length") {
+      /**
+       * 数组的 length 属性被修改时，找到并执行所有可能受到影响的副作用函数
+       *
+       * @example
+       * ```js
+       * const state = reactive({ arr:[1, 2, 3] })
+       * state.arr.length = 2
+       * // 触发所有依赖于数组的副作用函数
+       * state.arr[2] = undefined
+       * ```
+       */
+      const newLength = Number(newValue);
+      depsMap.forEach((dep, key) => {
+        if (
+          key === "length" ||
+          key === ARRAY_ITERATE_KEY ||
+          (!isSymbol(key) && key >= newLength)
+        ) {
+          add(dep);
+        }
+      });
     } else {
-      effect.run();
+      // 使用 void 0 代表 undefined 好处是 void 0 为 6 byte undefined为 9 byte
+      if (key !== void 0) {
+        add(depsMap.get(key));
+      }
+      if (isArrayIndex) {
+        add(depsMap.get(ARRAY_ITERATE_KEY));
+      }
+
+      switch (type) {
+        case TriggerOpTypes.ADD:
+          /**
+           * 处理对象|Map的添加操作
+           *
+           * @example
+           * ```js
+           * const state = reactive({key1:'key1', key2:'key2', key3:'key3'})
+           * data.key4 = 'key4' // 当添加属性时，直接将 key 作为 iterate_key|map_key_iterate_key 的依赖放进要执行的 effects 中
+           * ```
+           */
+          if (!targetIsArray) {
+            add(depsMap.get(ITERATE_KEY));
+            if (isMap(target)) {
+              add(depsMap.get(MAP_KEY_ITERATE_KEY));
+            }
+          } else if (isArrayIndex) {
+            /**
+             * 处理数组以下标值的添加操作
+             * @example
+             * ```js
+             * const state = reactive({ arr:[1, 2, 3] })
+             * state.arr[3] = 5
+             */
+            add(depsMap.get("length"));
+          }
+          break;
+        case TriggerOpTypes.DELETE:
+          if (!targetIsArray) {
+            add(depsMap.get(ITERATE_KEY));
+            if (isMap(target)) {
+              add(depsMap.get(MAP_KEY_ITERATE_KEY));
+            }
+          }
+          break;
+        case TriggerOpTypes.SET:
+          if (isMap(target)) {
+            add(depsMap.get(ITERATE_KEY));
+          }
+          break;
+      }
     }
   }
+  endBatch();
 }
