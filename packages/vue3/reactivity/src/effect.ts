@@ -2,6 +2,8 @@ import { Link } from "./dep";
 
 let batchDepth = 0;
 let batchedSub: Subscriber | undefined;
+export let shouldTrack = true;
+export let activeSub: Subscriber | undefined;
 
 export enum EffectFlags {
   ACTIVE = 1 << 0,
@@ -12,6 +14,8 @@ export enum EffectFlags {
   ALLOW_RECURSE = 1 << 5,
   PAUSE = 1 << 6,
 }
+
+export type EffectScheduler = (...args: any[]) => any;
 
 export type DebuggerEvent = {
   effect: Subscriber;
@@ -34,15 +38,54 @@ export interface Subscriber extends DebuggerOptions {
   notify(): true | void;
 }
 
-export interface ReactiveEffectOptions extends DebuggerOptions {}
+export interface ReactiveEffectOptions extends DebuggerOptions {
+  scheduler?: EffectScheduler;
+  allowRecurse?: boolean;
+  onStop?: () => void;
+}
 
-// export class ReactiveEffect<T =any> implements Subscriber , ReactiveEffectOptions{
-//   deps?: Link = undefined
-//   depsTail?: Link | undefined;
-//   flags: EffectFlags=EffectFlags.ACTIVE|EffectFlags.TRACKING;
-//   next?: Subscriber | undefined;
-//   cleanup?:()=>void=undefined
-// }
+export class ReactiveEffect<T = any>
+  implements Subscriber, ReactiveEffectOptions
+{
+  deps?: Link = undefined;
+  depsTail?: Link | undefined;
+  flags: EffectFlags = EffectFlags.ACTIVE | EffectFlags.TRACKING;
+  next?: Subscriber | undefined;
+  cleanup?: () => void = undefined;
+  scheduler?: EffectScheduler = undefined;
+  constructor(public fn: () => T) {}
+  pause(): void {
+    this.flags |= EffectFlags.PAUSE;
+  }
+  resume(): void {}
+  notify(): void {}
+  run(): T {
+    if (!(this.flags & EffectFlags.ACTIVE)) {
+      return this.fn();
+    }
+    this.flags |= EffectFlags.RUNNING;
+    cleanupEffect(this);
+    prepareDeps(this);
+    const prevEffect = activeSub;
+    const prevShouldTrack = shouldTrack;
+    activeSub = this;
+    shouldTrack = true;
+    try {
+      return this.fn();
+    } finally {
+      cleanupDeps(this);
+      activeSub = prevEffect;
+      shouldTrack = prevShouldTrack;
+      this.flags &= ~EffectFlags.RUNNING;
+    }
+  }
+  stop() {}
+  trigger(): void {}
+  runIfDirty(): void {}
+  // get dirty(): boolean {
+  //   return isDirty(this);
+  // }
+}
 
 /**
  * 批处理开始函数，记录需要批处理操作的数量
@@ -91,4 +134,33 @@ export function endBatch(): void {
     }
   }
   if (error) throw error;
+}
+
+function cleanupEffect(e: ReactiveEffect) {
+  const { cleanup } = e;
+  e.cleanup = undefined;
+  if (cleanup) {
+    const prevSub = activeSub;
+    activeSub = undefined;
+    try {
+      cleanup();
+    } finally {
+      activeSub = prevSub;
+    }
+  }
+}
+function prepareDeps(sub: Subscriber) {
+  for (let link = sub.deps; link; link = link.nextDep) {
+    link.version = -1;
+    link.prevActiveLink = link.dep.activeLink;
+    link.dep.activeLink = link;
+  }
+}
+function cleanupDeps(sub: Subscriber) {
+  let head;
+  let tail = sub.depsTail;
+  let link = tail;
+  while (link) {
+    const prev = link.prevDep;
+  }
 }

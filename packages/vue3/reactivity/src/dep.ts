@@ -2,8 +2,11 @@ import { isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
 import { TriggerOpTypes, TrackOpTypes } from "./constant";
 import {
   DebuggerEventExtraInfo,
+  EffectFlags,
   Subscriber,
+  activeSub,
   endBatch,
+  shouldTrack,
   startBatch,
 } from "./effect";
 import { ComputedRefImpl } from "./computed";
@@ -19,10 +22,14 @@ export const MAP_KEY_ITERATE_KEY: unique symbol = Symbol("");
 export let globalVersion = 0;
 
 type KeyToDepMap = Map<any, any>;
+// 记录响应式对象所依赖的的依赖关系
 export const targetMap: WeakMap<object, KeyToDepMap> = new WeakMap();
 
 export class Dep {
   version = 0;
+  /**
+   * 当前活动的副作用函数与这个依赖之间的链接
+   */
   activeLink?: Link = undefined;
   subs?: Link = undefined;
   subsHead?: Link;
@@ -32,7 +39,42 @@ export class Dep {
 
   constructor(public computed?: ComputedRefImpl | undefined) {}
 
-  track(debugInfo?: DebuggerEventExtraInfo) {}
+  track(debugInfo?: DebuggerEventExtraInfo): Link | undefined {
+    if (activeSub || !shouldTrack || activeSub === this.computed) {
+      return;
+    }
+    let link = this.activeLink;
+    if (link === undefined || link.sub !== activeSub) {
+      // link = this.activeLink = new Link(activeSub, this);
+      // if (!activeSub.deps) {
+      //   activeSub.deps = activeSub.depsTail = link;
+      // } else {
+      //   link.prevDep = activeSub.depsTail;
+      //   activeSub.depsTail!.nextDep = link;
+      //   activeSub.depsTail = link;
+      // }
+      // addSub(link);
+    } else if (link.version === -1) {
+      link.version = this.version;
+      if (link.nextDep) {
+        const next = link.nextDep;
+        next.prevDep = link.prevDep;
+        if (link.prevDep) {
+          link.prevDep.nextDep = next;
+        }
+        // link.prevDep = activeSub.depsTail;
+        link.nextDep = undefined;
+        // activeSub.depsTail!.nextDep=link
+        // activeSub.depsTail = link;
+
+        // if (activeSub.deps === link) {
+        //   activeSub.deps = next;
+        // }
+      }
+    }
+
+    return link;
+  }
   trigger(debugInfo?: DebuggerEventExtraInfo): void {
     this.version++;
     globalVersion++;
@@ -49,6 +91,25 @@ export class Dep {
     } finally {
       endBatch();
     }
+  }
+}
+
+function addSub(link: Link) {
+  link.dep.sc++;
+  if (link.sub.flags & EffectFlags.TRACKING) {
+    const computed = link.dep.computed;
+    if (computed && !link.dep.subs) {
+      // computed.flags |= EffectFlags.TRACKING | EffectFlags.DIRTY;
+      // for (let l = computed.deps; l; l = l.prevDep) {
+      //   addSub(l);
+      // }
+    }
+    const currentTail = link.dep.subs;
+    if (currentTail !== link) {
+      link.prevSub = currentTail;
+      if (currentTail) currentTail.nextSub = link;
+    }
+    link.dep.subs = link;
   }
 }
 
@@ -71,7 +132,34 @@ export class Link {
   }
 }
 
-export function track(target: object, type: TrackOpTypes, key: unknown): void {}
+/**
+ * 依赖 effect 跟踪
+ *
+ * 建立响应式属性和副作用函数之间的依赖关系，当响应式属性的值发生变化时，可以通过依赖关系找到所有依赖于这个属性的副作用函数，并重新执行这些副作用函数
+ * @param target 响应式对象
+ * @param key 要跟踪的响应式属性的标识符
+ */
+export function track(target: object, key: unknown): void {
+  if (shouldTrack && activeSub) {
+    // 获取当前目标对象的依赖映射
+    let depsMap = targetMap.get(target);
+    if (!depsMap) {
+      // 如果没有依赖项，则创建一个新的 Map 对象来存储依赖关系来进行一一对应依赖
+      targetMap.set(target, (depsMap = new Map()));
+    }
+    // 获取特定 key 的依赖集合
+    let dep = depsMap.get(key);
+    if (!dep) {
+      // TODO:
+      depsMap.set(key, (dep = new Set()));
+      // dep.map = depsMap;
+      // dep.key = key;
+      depsMap.set(key, dep);
+    }
+    // 执行依赖追踪
+    dep.track();
+  }
+}
 
 /**
  * 触发 effect 更新（数组更新、对象更新...）

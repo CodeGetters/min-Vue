@@ -1,7 +1,8 @@
 /**
- *
- *
- *
+ * 针对不同类型的响应式对象，提供不同的响应式处理方式
+ * BaseReactiveHandler: 是公共的基础类，提供了通用的 get 方法
+ * MutableReactiveHandler: 针对 Object、Array 和 Map 类型的响应式对象，提供了 set 方法
+ * ReadonlyReactiveHandler
  */
 import {
   hasOwn,
@@ -10,7 +11,7 @@ import {
   isObject,
   isSymbol,
 } from "@mini/shared";
-import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from "./constant";
+import { ReactiveFlags, TriggerOpTypes } from "./constant";
 import {
   isReadOnly,
   isShallow,
@@ -21,7 +22,6 @@ import {
   toRaw,
   type Target,
 } from "./reactive";
-import { arrayInstrumentations } from "./arrayInstrumentations";
 import { makeMap } from "./makeMap";
 import { ITERATE_KEY, track, trigger } from "./dep";
 import { isRef } from "./ref";
@@ -109,18 +109,6 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
         return target;
       }
     }
-    const targetIsArray = isArray(target);
-
-    if (!isReadOnly) {
-      let fn: Function | undefined;
-      if (targetIsArray && (fn = arrayInstrumentations[key])) {
-        return fn;
-      }
-      if (key === "hasOwnProperty") {
-        return hasOwnProperty;
-      }
-    }
-
     const res = Reflect.get(target, key, receiver);
 
     if (
@@ -132,10 +120,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
     }
 
     if (!isReadOnly) {
-      track(target, TrackOpTypes.GET, key);
-    }
-    if (isRef(res)) {
-      return;
+      track(target, key);
     }
     if (isObject(res)) {
       return isReadOnly ? readonly(res) : reactive(res);
@@ -144,27 +129,18 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
   }
 }
 
-function hasOwnProperty(this: object, key: unknown) {
-  if (!isSymbol(key)) {
-    key = String(key);
-  }
-  const obj = toRaw(this);
-  track(obj, TrackOpTypes.HAS, key);
-  return obj.hasOwnProperty(key as string);
-}
-
 class MutableReactiveHandler extends BaseReactiveHandler {
   constructor(isShallow = false) {
     super(false, isShallow);
   }
 
   /**
+   * 设置响应式对象的属性值
    *
    * @param target 需要进行 set 的目标对象
    * @param key 需要进行 set 的目标对象 key
    * @param value 修改后 set 后目标对象 key 对应的值
    * @param receiver 代理对象 proxy
-   * @returns
    */
   set(
     target: Record<string | symbol, unknown>,
@@ -173,22 +149,6 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     receiver: object
   ): boolean {
     let oldValue = target[key];
-    // 边界检查
-    if (!this._isShallow) {
-      const isOldValueReadonly = isReadOnly(oldValue);
-      if (!isShallow(value) && !isReadOnly(value)) {
-        oldValue = toRaw(oldValue);
-        value = toRaw(value);
-      }
-      if (!isArray(target) && isRef(oldValue) && !isRef(value)) {
-        if (isOldValueReadonly) {
-          return false;
-        } else {
-          oldValue.value = value;
-          return true;
-        }
-      }
-    }
     const hadKey =
       isArray(target) && isIntegerKey(key) ? Number(key) : hasOwn(target, key);
     const result = Reflect.set(
@@ -228,19 +188,40 @@ class MutableReactiveHandler extends BaseReactiveHandler {
     return result;
   }
 
-  // deleteProperty(
-  //   target: Record<string | symbol, unknown>,
-  //   key: string | symbol
-  // ) {}
+  /**
+   * 删除响应式对象的属性
+   * @param target 需要进行 delete 的目标对象
+   * @param key 需要删除的属性
+   */
+  deleteProperty(
+    target: Record<string | symbol, unknown>,
+    key: string | symbol
+  ): boolean {
+    const hadKey = hasOwn(target, key);
+    const oldValue = target[key];
+    const result = Reflect.deleteProperty(target, key);
+    if (result && hadKey) {
+      // 触发更新
+      trigger(target, TriggerOpTypes.DELETE, key, undefined, oldValue);
+    }
+    return result;
+  }
 
-  // has(target: Record<string | symbol, unknown>, key: string | symbol) {}
+  /**
+   * 检查目标对象是否具有指定的属性或方法
+   * @param target 目标对象
+   * @param key 检查的属性值
+   */
+  has(target: Record<string | symbol, unknown>, key: string | symbol) {
+    const result = Reflect.has(target, key);
+    if (!isSymbol(key) || !builtInSymbols.has(key as symbol)) {
+      track(target, key);
+    }
+    return result;
+  }
 
   ownKeys(target: Record<string | symbol, undefined>): (string | symbol)[] {
-    track(
-      target,
-      TrackOpTypes.ITERATE,
-      isArray(target) ? "length" : ITERATE_KEY
-    );
+    track(target, isArray(target) ? "length" : ITERATE_KEY);
     return Reflect.ownKeys(target);
   }
 }
