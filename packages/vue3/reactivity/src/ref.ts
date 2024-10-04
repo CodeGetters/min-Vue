@@ -1,15 +1,7 @@
-import { hasChanged, isObject } from "@mini/shared";
+import { hasChanged } from "@mini/shared";
 import { ReactiveFlags } from "./constant";
 import { Dep } from "./dep";
-import {
-  Builtin,
-  ShallowReactiveMarker,
-  isReadOnly,
-  isShallow,
-  reactive,
-  toRaw,
-  toReactive,
-} from "./reactive";
+import { Builtin, ShallowReactiveMarker, toReactive } from "./reactive";
 import { IfAny } from "./typeUtils";
 
 export function ref<T>(
@@ -22,6 +14,12 @@ export function ref(value?: unknown) {
   return createRef(value, false);
 }
 
+/**
+ * 创建响应式引用对象
+ * @internal
+ * @param rawValue 响应式引用对象的值
+ * @param shallow 浅代理？
+ */
 function createRef(rawValue: unknown, shallow: boolean) {
   if (isRef(rawValue)) {
     return rawValue;
@@ -30,21 +28,31 @@ function createRef(rawValue: unknown, shallow: boolean) {
 }
 
 class RefImpl<T = any> {
-  _value: T;
-  private _rawValue: T;
-  dep: Dep = new Dep();
+  _value: T; // 响应式引用对象的值
+  private _rawValue: T; // 响应式引用对象的原始值
+  dep: Dep = new Dep(); // 响应式引用对象的依赖管理对象
   public readonly [ReactiveFlags.IS_REF] = true;
   public readonly [ReactiveFlags.IS_SHALLOW]: boolean = false;
 
   constructor(value: T, isShallow: boolean) {
-    this._rawValue = isShallow ? value : toRaw(value);
+    this._rawValue = value;
     this._value = isShallow ? value : toReactive(value);
   }
 
+  /**
+   * @internal
+   * 获取响应式引用对象的值
+   */
   get value() {
+    // 收集依赖
     this.dep.track();
     return this._value;
   }
+  /**
+   * @internal
+   * 设置响应式引用对象的值
+   * 判断新值和旧值是否，不同则更新响应式引用对象的值
+   */
   set value(newValue) {
     const oldValue = this._rawValue;
     if (hasChanged(newValue, oldValue)) {

@@ -152,6 +152,7 @@ export function trigger(
 
   if (type === TriggerOpTypes.CLEAR) {
     // 响应式对象被清空，触发所有的副作用函数
+    depsMap.forEach(add);
   } else {
     const targetIsArray = isArray(target);
     const isArrayIndex = targetIsArray && isIntegerKey(key);
