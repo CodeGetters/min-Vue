@@ -11,7 +11,8 @@ export const hasOwn = (
 
 export const isPlainObject = (val: unknown): val is object =>
   toTypeString(val) === "[object Object]";
-
+export const isFunction = (val: unknown): val is Function =>
+  typeof val === "function";
 export const isString = (val: unknown): val is string =>
   typeof val === "string";
 export const isMap = (val: unknown): val is Map<any, any> =>
