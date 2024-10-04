@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="../dist/reactivity.global.js"></script>
+    <!-- <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script> -->
+    <script>
+      //   const { ref} = Vue;
+      const { computed, ref, reactive } = reactivity;
+      const count = ref(1);
+      const plusOne = computed({
+        get: () => count.value + 1,
+        set: (val) => {
+          count.value = val - 1;
+        },
+      });
+
+      plusOne.value = 1;
+      console.log(count.value); // 0
+      const author = reactive({
+        name: "John Doe",
+        books: [
+          "Vue 2 - Advanced Guide",
+          "Vue 3 - Basic Guide",
+          "Vue 4 - The Mystery",
+        ],
+      });
+
+      // 一个计算属性 ref
+      const publishedBooksMessage = computed(() => {
+        return author.books.length > 0 ? "Yes" : "No";
+      });
+      console.log(publishedBooksMessage.value);
+    </script>
+  </body>
+</html>

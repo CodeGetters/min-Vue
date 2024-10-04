@@ -1,7 +1,13 @@
 import { isFunction } from "@mini/shared";
-import { DebuggerOptions, EffectFlags, Subscriber } from "./effect";
+import {
+  DebuggerOptions,
+  EffectFlags,
+  Subscriber,
+  refreshComputed,
+} from "./effect";
 import { Ref } from "./ref";
 import { ReactiveFlags } from "./constant";
+import { Dep, Link } from "./dep";
 
 declare const ComputedRefSymbol: unique symbol;
 declare const WritableComputedRefSymbol: unique symbol;
@@ -21,13 +27,31 @@ export interface WritableComputedRef<T, S = T> extends BaseComputedRef<T, S> {
 }
 
 export class ComputedRefImpl<T = any> implements Subscriber {
+  _value: any = undefined;
+  readonly dep: Dep = new Dep(this);
+  deps?: Link = undefined;
   flags: EffectFlags;
-  notify(): void {}
+  notify(): true | void {}
   constructor(
     public fn: ComputedGetter<T>,
     private readonly setter: ComputedSetter<T> | undefined
   ) {
     this[ReactiveFlags.IS_READONLY] = !setter;
+  }
+
+  get value(): T {
+    const link = this.dep.track();
+    refreshComputed(this);
+    if (link) {
+      link.version = this.dep.version;
+    }
+    return this._value;
+  }
+
+  set value(newValue) {
+    if (this.setter) {
+      this.setter(newValue);
+    }
   }
 }
 
@@ -43,8 +67,7 @@ export function computed<T>(
   getterOrOptions: ComputedGetter<T> | WritableComputedOptions<T>,
   debugOptions?: DebuggerOptions
 ) {
-  let getter: ComputedGetter<T>;
-  let setter: ComputedSetter<T> | undefined;
+  let getter: ComputedGetter<T>, setter: ComputedSetter<T> | undefined;
   if (isFunction(getterOrOptions)) {
     getter = getterOrOptions as ComputedGetter<T>;
   } else {

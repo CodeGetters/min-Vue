@@ -1,5 +1,6 @@
-import { extend } from "@mini/shared";
+import { extend, hasChanged } from "@mini/shared";
 import { Link } from "./dep";
+import { ComputedRefImpl } from "./computed";
 
 let batchDepth = 0;
 let batchedSub: Subscriber | undefined;
@@ -199,4 +200,40 @@ export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
   const runner = e.run.bind(e) as ReactiveEffectRunner;
   runner.effect = e;
   return runner;
+}
+
+/**
+ * 刷新计算属性的值（值是否过时、计算新的值、更新计算属性的值...）
+ * @param computed
+ */
+export function refreshComputed(computed: ComputedRefImpl): undefined {
+  if (
+    computed.flags & EffectFlags.TRACKING &&
+    !(computed.flags & EffectFlags.DIRTY)
+  ) {
+    return;
+  }
+  computed.flags &= ~EffectFlags.DIRTY;
+  const dep = computed.dep;
+  computed.flags |= EffectFlags.RUNNING;
+  const prevSub = activeSub;
+  const prevShouldTrack = shouldTrack;
+  activeSub = computed;
+  shouldTrack = true;
+  try {
+    prepareDeps(computed);
+    const value = computed.fn(computed._value);
+    if (dep.version === 0 || hasChanged(value, computed._value)) {
+      computed._value = value;
+      dep.version++;
+    }
+  } catch (err) {
+    dep.version++;
+    throw err;
+  } finally {
+    activeSub = prevSub;
+    shouldTrack = prevShouldTrack;
+    cleanupDeps(computed);
+    computed.flags &= ~EffectFlags.RUNNING;
+  }
 }
