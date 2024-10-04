@@ -160,6 +160,37 @@ function cleanupEffect(e: ReactiveEffect) {
     }
   }
 }
+
+/**
+ * 准备订阅者 sub 的依赖项
+ * 设置依赖项的版本、保存前一个活动订阅者、设置当前的活动订阅者
+ * @param sub 订阅者
+ *
+ * @example
+ * ```js
+ * const sub = {
+ *    deps: {
+ *        version: 0,
+ *        prevActiveLink: 'prevActiveLink',
+ *        dep: {
+ *            activeLink: 'activeLink',
+ *        }
+ *    },
+ *    dep:{
+ *    }
+ * }
+ * // new sub...
+ * sub = {
+ *    deps: {
+ *        version:-1,
+ *        prevActiveLink: 'activeLink',
+ *        dep: {
+ *            activeLink: {...sub},
+ *        }
+ *    }
+ * }
+ *
+ */
 function prepareDeps(sub: Subscriber) {
   for (let link = sub.deps; link; link = link.nextDep) {
     link.version = -1;
@@ -167,14 +198,69 @@ function prepareDeps(sub: Subscriber) {
     link.dep.activeLink = link;
   }
 }
+
+/**
+ * 清理订阅者 sub 中未使用的依赖项
+ * @param sub 订阅者
+ *
+ * @example
+ * ```js
+ * const sub = {
+ *    deps: 'deps',
+ *    depsTail:{
+ *        prevDep: 'prevDep',
+ *        prevActiveLink: 'prevActiveLink',
+ *        version: 0,
+ *        dep: {
+ *            activeLink: 'activeLink',
+ *        }
+ *    },
+ * }
+ * // new sub...
+ * sub = {
+ *    deps: {
+ *        prevDep: 'prevDep',
+ *        prevActiveLink: 'prevActiveLink',
+ *        version: 0,
+ *        dep: {
+ *            activeLink: 'activeLink',
+ *        }
+ *    },
+ *    depsTail: {
+ *        prevDep: 'prevDep',
+ *        prevActiveLink: 'prevActiveLink',
+ *        version: 0,
+ *        dep: {
+ *            activeLink: 'activeLink',
+ *        }
+ *    }
+ * }
+ */
 function cleanupDeps(sub: Subscriber) {
   let head;
   let tail = sub.depsTail;
   let link = tail;
   while (link) {
     const prev = link.prevDep;
+    if (link.version === -1) {
+      if (link === tail) {
+        tail = prev;
+      }
+      removeSub(link);
+      removeDep(link);
+    } else {
+      head = link;
+    }
+    link.dep.activeLink = link.prevActiveLink;
+    link.prevActiveLink = undefined;
+    link = prev;
   }
+  sub.deps = head;
+  sub.depsTail = tail;
 }
+
+function removeSub(link: Link, soft = false) {}
+function removeDep(link: Link) {}
 
 /**
  * 创建一个响应式副作用函数 effect，在响应式数据发生变化时自动执行某个函数
@@ -207,33 +293,45 @@ export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
  * @param computed
  */
 export function refreshComputed(computed: ComputedRefImpl): undefined {
+  // 如果计算属性正在跟踪且不是脏的，则直接返回
   if (
     computed.flags & EffectFlags.TRACKING &&
     !(computed.flags & EffectFlags.DIRTY)
   ) {
     return;
   }
+  // 清除脏标志
   computed.flags &= ~EffectFlags.DIRTY;
   const dep = computed.dep;
+  // 设置运行标志
   computed.flags |= EffectFlags.RUNNING;
+  // 保存当前的活动订阅者和跟踪状态
   const prevSub = activeSub;
   const prevShouldTrack = shouldTrack;
+  // 将当前计算属性设置为活动订阅者，并启用跟踪
   activeSub = computed;
   shouldTrack = true;
   try {
+    // 准备依赖项
     prepareDeps(computed);
+    // 执行计算函数获取新值
     const value = computed.fn(computed._value);
+    // 如果是首次计算或值发生变化，则更新计算属性的值和版本
     if (dep.version === 0 || hasChanged(value, computed._value)) {
       computed._value = value;
       dep.version++;
     }
   } catch (err) {
+    // 发生错误时增加版本号并重新抛出错误
     dep.version++;
     throw err;
   } finally {
+    // 恢复之前的活动订阅者和跟踪状态
     activeSub = prevSub;
     shouldTrack = prevShouldTrack;
+    // 清理依赖项
     cleanupDeps(computed);
+    // 清除运行标志
     computed.flags &= ~EffectFlags.RUNNING;
   }
 }

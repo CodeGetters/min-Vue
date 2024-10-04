@@ -29,6 +29,9 @@ export class Dep {
   subsHead?: Link;
   map?: KeyToDepMap = undefined;
   key?: unknown = undefined;
+  /**
+   * 订阅者数量
+   */
   sc: number = 0;
 
   constructor(public computed?: ComputedRefImpl | undefined) {}

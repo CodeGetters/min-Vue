@@ -29,7 +29,6 @@ export interface WritableComputedRef<T, S = T> extends BaseComputedRef<T, S> {
 export class ComputedRefImpl<T = any> implements Subscriber {
   _value: any = undefined;
   readonly dep: Dep = new Dep(this);
-  deps?: Link = undefined;
   flags: EffectFlags;
   notify(): true | void {}
   constructor(
