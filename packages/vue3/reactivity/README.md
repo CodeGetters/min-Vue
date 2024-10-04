@@ -29,3 +29,18 @@ pnpm dev vue3 reactivity -f cjs
 - 触发更新
 - computed 计算属性
 - 集合类型的处理
+
+- [x] reactive
+- [x] readonly
+- [x] toRaw
+- [x] isProxy
+- [x] isReactive
+- [x] isReadOnly
+- [x] ref
+- [x] isRef
+- [x] effect
+- [x] trigger
+- [x] track
+- [x] ReactiveEffect
+- [ ] watch
+- [ ] computed

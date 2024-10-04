@@ -8,5 +8,5 @@ export {
 } from "./reactive";
 
 export { isRef, ref } from "./ref";
-export { track } from "./dep";
+export { track, trigger } from "./dep";
 export { effect } from "./effect";
