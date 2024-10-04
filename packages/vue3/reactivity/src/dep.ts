@@ -1,4 +1,4 @@
-import { extend, isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
+import { isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
 import { TriggerOpTypes } from "./constant";
 import {
   DebuggerEventExtraInfo,
@@ -14,12 +14,6 @@ import { ComputedRefImpl } from "./computed";
 export const ITERATE_KEY: unique symbol = Symbol("");
 export const ARRAY_ITERATE_KEY: unique symbol = Symbol("");
 export const MAP_KEY_ITERATE_KEY: unique symbol = Symbol("");
-
-/**
- * 每一次 reactive 改变都会增加
- * 用于快速计算避免没有更改时进行 computed
- */
-export let globalVersion = 0;
 
 type KeyToDepMap = Map<any, any>;
 // 记录响应式对象所依赖的的依赖关系
@@ -40,29 +34,12 @@ export class Dep {
   constructor(public computed?: ComputedRefImpl | undefined) {}
 
   track(debugInfo?: DebuggerEventExtraInfo): Link | undefined {
-    if (activeSub || !shouldTrack || activeSub === this.computed) {
-      return;
-    }
-    let link = this.activeLink;
-    return link;
+    return this.activeLink;
   }
   trigger(debugInfo?: DebuggerEventExtraInfo): void {
     this.version++;
-    globalVersion++;
-    this.notify(debugInfo);
   }
-  notify(debugInfo?: DebuggerEventExtraInfo): void {
-    startBatch();
-    try {
-      for (let link = this.subs; link; link = link.prevSub) {
-        // if(link.sub.notify()){
-        //   ;(link.sub as ComputedRefImpl).dep.notify()
-        // }
-      }
-    } finally {
-      endBatch();
-    }
-  }
+  notify(debugInfo?: DebuggerEventExtraInfo): void {}
 }
 
 export class Link {
@@ -105,9 +82,6 @@ export function track(target: object, key: unknown): void {
       depsMap.set(key, (dep = new Set()));
     }
   }
-}
-export function trackEffects(dep) {
-  if (dep.has()) return;
 }
 
 /**
