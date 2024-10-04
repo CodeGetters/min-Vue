@@ -9,10 +9,15 @@ export const hasOwn = (
   key: string | symbol
 ): key is keyof typeof val => hasOwnProperty.call(val, key);
 
+export const isPlainObject = (val: unknown): val is object =>
+  toTypeString(val) === "[object Object]";
+
 export const isString = (val: unknown): val is string =>
   typeof val === "string";
 export const isMap = (val: unknown): val is Map<any, any> =>
   toTypeString(val) === "[object Map]";
+export const isSet = (val: unknown): val is Set<any> =>
+  toTypeString(val) === "[object Set]";
 export const isArray: typeof Array.isArray = Array.isArray;
 export const isSymbol = (val: unknown): val is string =>
   typeof val === "string";
