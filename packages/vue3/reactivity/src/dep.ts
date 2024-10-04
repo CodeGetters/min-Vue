@@ -51,6 +51,9 @@ export class Dep {
 
   // TODO：
   track(debugInfo?: DebuggerEventExtraInfo): Link | undefined {
+    if (!activeSub || !shouldTrack || activeSub === this.computed) {
+      return;
+    }
     let link = this.activeLink;
     if (link === undefined || link.sub !== activeSub) {
       link = this.activeLink = new Link(activeSub as Subscriber, this);

@@ -1,5 +1,6 @@
 import { hasOwn } from "@mini/shared";
 import { ReactiveFlags } from "./constant";
+import { Target } from "./reactive";
 
 function createInstrumentations() {
   const mutableInstrumentations = {};
@@ -36,10 +37,13 @@ function createInstrumentationGetter(isReadOnly: boolean, shallow: boolean) {
   };
 }
 
-export const mutableCollectionHandlers = {
+export const mutableCollectionHandlers: ProxyHandler<CollectionTypes> = {
   get: createInstrumentationGetter(false, false),
 };
 
 export const readonlyCollectionHandlers = {
   get: createInstrumentationGetter(true, false),
 };
+type CollectionTypes = IterableCollections | WeakCollections;
+type IterableCollections = (Map<any, any> | Set<any>) & Target;
+type WeakCollections = (WeakMap<any, any> | WeakSet<any>) & Target;

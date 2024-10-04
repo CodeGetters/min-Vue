@@ -11,19 +11,16 @@
     <!-- <script src="../dist/vue.global.js"></script> -->
     <script>
       // const { reactive, effect } = Vue;
-      const { reactive, effect } = reactivity;
-      const state = reactive({ key: 1 });
+      const { reactive, ref, effect } = reactivity;
+      const state = ref(1);
 
       const btn = document.getElementById("btn");
       btn.addEventListener("click", () => {
-        watch();
+        state.value++;
+        console.log(state.value);
       });
-      function watch() {
-        state.key++;
-        console.log(state.key);
-      }
       effect(() => {
-        console.log("effect", state.key);
+        console.log("effect", state.value);
       });
     </script>
   </body>
