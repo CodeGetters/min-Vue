@@ -4,6 +4,7 @@ import {
   DebuggerEventExtraInfo,
   ReactiveEffect,
   Subscriber,
+  activeEffect,
   activeSub,
   endBatch,
   shouldTrack,
@@ -15,6 +16,8 @@ export const ITERATE_KEY: unique symbol = Symbol("");
 export const ARRAY_ITERATE_KEY: unique symbol = Symbol("");
 export const MAP_KEY_ITERATE_KEY: unique symbol = Symbol("");
 
+export let globalVersion = 0;
+
 type KeyToDepMap = Map<any, any>;
 // 记录响应式对象所依赖的的依赖关系
 export const targetMap: WeakMap<object, KeyToDepMap> = new WeakMap();
@@ -25,8 +28,18 @@ export class Dep {
    * 当前活动的副作用函数与这个依赖之间的链接
    */
   activeLink?: Link = undefined;
+  /**
+   *
+   */
   subs?: Link = undefined;
+  /**
+   *
+   */
   subsHead?: Link;
+  /**
+   *
+   */
+  target: unknown = undefined;
   map?: KeyToDepMap = undefined;
   key?: unknown = undefined;
   /**
@@ -41,8 +54,21 @@ export class Dep {
   }
   trigger(debugInfo?: DebuggerEventExtraInfo): void {
     this.version++;
+    globalVersion++;
+    this.notify(debugInfo);
   }
-  notify(debugInfo?: DebuggerEventExtraInfo): void {}
+  notify(debugInfo?: DebuggerEventExtraInfo): void {
+    startBatch();
+    try {
+      for (let link = this.subs; link; link = link.prevSub) {
+        if (link.sub.notify()) {
+          (link.sub as ComputedRefImpl).dep.notify();
+        }
+      }
+    } finally {
+      endBatch();
+    }
+  }
 }
 
 export class Link {
@@ -113,11 +139,11 @@ export function trigger(
   const depsMap = targetMap.get(target);
   if (!depsMap) {
     // 从未被追踪过（没有依赖）
+    globalVersion++;
     return;
   }
-
   const effects = new Set<ReactiveEffect>();
-  const add = (dep: Set<ReactiveEffect>) => {
+  const run = (dep: Set<ReactiveEffect> | undefined) => {
     if (dep) {
       dep.forEach((effect) => {
         effects.add(effect);
@@ -125,11 +151,9 @@ export function trigger(
     }
   };
   startBatch();
-  depsMap.forEach(add);
-
   if (type === TriggerOpTypes.CLEAR) {
     // 响应式对象被清空，触发所有的副作用函数
-    depsMap.forEach(add);
+    depsMap.forEach(run);
   } else {
     const targetIsArray = isArray(target);
     const isArrayIndex = targetIsArray && isIntegerKey(key);
@@ -153,16 +177,16 @@ export function trigger(
           key === ARRAY_ITERATE_KEY ||
           (!isSymbol(key) && key >= newLength)
         ) {
-          add(dep);
+          run(dep);
         }
       });
     } else {
       // 使用 void 0 代表 undefined 好处是 void 0 为 6 byte undefined为 9 byte
       if (key !== void 0) {
-        add(depsMap.get(key));
+        run(depsMap.get(key));
       }
       if (isArrayIndex) {
-        add(depsMap.get(ARRAY_ITERATE_KEY));
+        run(depsMap.get(ARRAY_ITERATE_KEY));
       }
 
       switch (type) {
@@ -177,9 +201,9 @@ export function trigger(
            * ```
            */
           if (!targetIsArray) {
-            add(depsMap.get(ITERATE_KEY));
+            run(depsMap.get(ITERATE_KEY));
             if (isMap(target)) {
-              add(depsMap.get(MAP_KEY_ITERATE_KEY));
+              run(depsMap.get(MAP_KEY_ITERATE_KEY));
             }
           } else if (isArrayIndex) {
             /**
@@ -189,20 +213,20 @@ export function trigger(
              * const state = reactive({ arr:[1, 2, 3] })
              * state.arr[3] = 5
              */
-            add(depsMap.get("length"));
+            run(depsMap.get("length"));
           }
           break;
         case TriggerOpTypes.DELETE:
           if (!targetIsArray) {
-            add(depsMap.get(ITERATE_KEY));
+            run(depsMap.get(ITERATE_KEY));
             if (isMap(target)) {
-              add(depsMap.get(MAP_KEY_ITERATE_KEY));
+              run(depsMap.get(MAP_KEY_ITERATE_KEY));
             }
           }
           break;
         case TriggerOpTypes.SET:
           if (isMap(target)) {
-            add(depsMap.get(ITERATE_KEY));
+            run(depsMap.get(ITERATE_KEY));
           }
           break;
       }

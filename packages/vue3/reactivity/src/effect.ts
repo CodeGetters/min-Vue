@@ -1,6 +1,7 @@
 import { extend, hasChanged } from "@mini/shared";
 import { Link } from "./dep";
 import { ComputedRefImpl } from "./computed";
+import { activeEffectScope } from "./effectScope";
 
 let batchDepth = 0;
 let batchedSub: Subscriber | undefined;
@@ -53,17 +54,35 @@ export interface ReactiveEffectOptions extends DebuggerOptions {
 export class ReactiveEffect<T = any>
   implements Subscriber, ReactiveEffectOptions
 {
+  /**
+   * @internal
+   */
   deps?: Link = undefined;
+  /**
+   * @internal
+   */
   depsTail?: Link | undefined;
+  /**
+   * @internal
+   */
   flags: EffectFlags = EffectFlags.ACTIVE | EffectFlags.TRACKING;
+  /**
+   * @internal
+   */
   next?: Subscriber | undefined;
-  active = true;
+  /**
+   * @internal
+   */
   cleanup?: () => void = undefined;
+
+  onStop?: () => void;
   scheduler?: EffectScheduler = undefined;
-  constructor(public fn: () => T) {}
-  pause(): void {
-    this.flags |= EffectFlags.PAUSE;
+  constructor(public fn: () => T) {
+    if (activeEffectScope && activeEffectScope.active) {
+      activeEffectScope.effects.push(this);
+    }
   }
+  pause(): void {}
   resume(): void {}
   notify(): void {}
   run(): T {
@@ -87,15 +106,46 @@ export class ReactiveEffect<T = any>
     }
   }
   stop() {
-    if (this.active) {
+    if (this.flags & EffectFlags.ACTIVE) {
+      for (let link = this.deps; link; link = link.nextDep) {
+        removeSub(link);
+      }
+      this.deps = this.depsTail = undefined;
       cleanupEffect(this);
+      this.onStop && this.onStop();
+      this.flags &= ~EffectFlags.ACTIVE;
     }
   }
   trigger(): void {}
   runIfDirty(): void {}
-  // get dirty(): boolean {
-  //   return isDirty(this);
-  // }
+
+  get dirty(): boolean {
+    return isDirty(this);
+  }
+}
+
+/**
+ * 检查订阅者 sub 的依赖项是否发生变化
+ * 检查依赖项版本、刷新计算属性后的版本
+ * @param sub 订阅者
+ */
+export function isDirty(sub: Subscriber): boolean {
+  for (let link = sub.deps; link; link = link.nextDep) {
+    if (
+      link.dep.version !== link.version ||
+      (link.dep.computed &&
+        (refreshComputed(link.dep.computed) ||
+          link.dep.version !== link.version))
+    ) {
+      return true;
+    }
+  }
+  // @ts-expect-error only for backwards compatibility where libs manually set
+  // this flag - e.g. Pinia's testing module
+  if (sub._dirty) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -282,7 +332,12 @@ export function effect<T = any>(fn: () => T, options?: ReactiveEffectOptions) {
     // Object.assign()
     extend(e, options);
   }
-  e.run();
+  try {
+    e.run();
+  } catch (err) {
+    e.stop();
+    throw err;
+  }
   const runner = e.run.bind(e) as ReactiveEffectRunner;
   runner.effect = e;
   return runner;

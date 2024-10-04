@@ -11,10 +11,8 @@ import {
   isObject,
   isSymbol,
 } from "@mini/shared";
-import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from "./constant";
+import { ReactiveFlags, TriggerOpTypes } from "./constant";
 import {
-  isReadOnly,
-  isShallow,
   reactive,
   reactiveMap,
   readonly,
@@ -53,10 +51,7 @@ const builtInSymbols = new Set(
  * ```
  */
 class BaseReactiveHandler implements ProxyHandler<Target> {
-  constructor(
-    protected readonly _isReadonly = false,
-    protected readonly _isShallow = false
-  ) {}
+  constructor(protected readonly _isReadonly = false) {}
 
   /**
    * 根据响应式特殊的标记值分别进行相应的处理
@@ -108,6 +103,7 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
         // 如果外部访问的是 raw 说明需要的是原对象
         return target;
       }
+      return;
     }
     const res = Reflect.get(target, key, receiver);
 
@@ -130,8 +126,8 @@ class BaseReactiveHandler implements ProxyHandler<Target> {
 }
 
 class MutableReactiveHandler extends BaseReactiveHandler {
-  constructor(isShallow = false) {
-    super(false, isShallow);
+  constructor() {
+    super(false);
   }
 
   /**
@@ -227,8 +223,8 @@ class MutableReactiveHandler extends BaseReactiveHandler {
 }
 
 class ReadonlyReactiveHandler extends BaseReactiveHandler {
-  constructor(isShallow = false) {
-    super(true, isShallow);
+  constructor() {
+    super(true);
   }
   set(target: object, key: string | symbol) {
     return true;
