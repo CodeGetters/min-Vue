@@ -7,10 +7,10 @@
   </head>
   <body>
     <script src="../dist/reactivity.global.js"></script>
-    <script src="../dist/vue.global.js"></script>
+    <!-- <script src="../dist/vue.global.js"></script> -->
     <script>
-      const { ref, computed, reactive } = Vue;
-      // const { computed, ref, reactive } = reactivity;
+      // const { ref, computed, reactive } = Vue;
+      const { computed, ref, reactive } = reactivity;
       const count = ref(1);
       const plusOne = computed({
         get: () => count.value + 1,

@@ -7,7 +7,7 @@ import {
 } from "./effect";
 import { Ref } from "./ref";
 import { ReactiveFlags } from "./constant";
-import { Dep, Link } from "./dep";
+import { Dep } from "./dep";
 
 declare const ComputedRefSymbol: unique symbol;
 declare const WritableComputedRefSymbol: unique symbol;
@@ -40,6 +40,7 @@ export class ComputedRefImpl<T = any> implements Subscriber {
 
   get value(): T {
     const link = this.dep.track();
+    // 刷新计算属性的值
     refreshComputed(this);
     if (link) {
       link.version = this.dep.version;
@@ -54,6 +55,9 @@ export class ComputedRefImpl<T = any> implements Subscriber {
   }
 }
 
+/**
+ * 函数重载，考虑多种使用类型
+ */
 export function computed<T>(
   getter: ComputedGetter<T>,
   debugOptions?: DebuggerOptions

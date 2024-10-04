@@ -41,6 +41,6 @@ pnpm dev vue3 reactivity -f cjs
 - [x] effect
 - [x] trigger
 - [x] track
+- [x] computed
 - [x] ReactiveEffect
 - [ ] watch
-- [ ] computed
