@@ -49,8 +49,49 @@ export class Dep {
 
   constructor(public computed?: ComputedRefImpl | undefined) {}
 
+  // TODO：
   track(debugInfo?: DebuggerEventExtraInfo): Link | undefined {
-    return this.activeLink;
+    let link = this.activeLink;
+    if (link === undefined || link.sub !== activeSub) {
+      link = this.activeLink = new Link(activeSub as Subscriber, this);
+
+      if (!(activeSub as Subscriber).deps) {
+        (activeSub as Subscriber).deps = (activeSub as Subscriber).depsTail =
+          link;
+      } else {
+        link.prevDep = (activeSub as Subscriber).depsTail;
+        (activeSub as Subscriber).depsTail!.nextDep = link;
+        (activeSub as Subscriber).depsTail = link;
+      }
+
+      // addSub(link);
+    } else if (link.version === -1) {
+      // reused from last run - already a sub, just sync version
+      link.version = this.version;
+
+      // If this dep has a next, it means it's not at the tail - move it to the
+      // tail. This ensures the effect's dep list is in the order they are
+      // accessed during evaluation.
+      if (link.nextDep) {
+        const next = link.nextDep;
+        next.prevDep = link.prevDep;
+        if (link.prevDep) {
+          link.prevDep.nextDep = next;
+        }
+
+        link.prevDep = activeSub.depsTail;
+        link.nextDep = undefined;
+        activeSub.depsTail!.nextDep = link;
+        activeSub.depsTail = link;
+
+        // this was the head - point to the new head
+        if (activeSub.deps === link) {
+          activeSub.deps = next;
+        }
+      }
+    }
+    // return this.activeLink;
+    return link;
   }
   trigger(debugInfo?: DebuggerEventExtraInfo): void {
     this.version++;
@@ -106,10 +147,14 @@ export function track(target: object, key: unknown): void {
       targetMap.set(target, (depsMap = new Map()));
     }
     // 获取特定 key 的依赖集合
-    let dep = depsMap.get(key);
+    let dep: Dep | undefined = depsMap.get(key);
     if (!dep) {
-      depsMap.set(key, (dep = new Set()));
+      depsMap.set(key, (dep = new Dep()));
+      dep.target = target;
+      dep.map = depsMap;
+      dep.key = key;
     }
+    dep.track();
   }
 }
 
@@ -142,12 +187,9 @@ export function trigger(
     globalVersion++;
     return;
   }
-  const effects = new Set<ReactiveEffect>();
-  const run = (dep: Set<ReactiveEffect> | undefined) => {
+  const run = (dep: Dep | undefined) => {
     if (dep) {
-      dep.forEach((effect) => {
-        effects.add(effect);
-      });
+      dep.trigger();
     }
   };
   startBatch();
