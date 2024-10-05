@@ -16,3 +16,127 @@
 
 最后，由于之前监听了**内部使用的响应对象**的变化，如果**内部使用的响应对象**一旦发生了变化，渲染器将再次调用渲染函数（render function）创建一个新的虚拟节点（Virtual DOM），并将新旧虚拟节点（Virtual DOM）发送到补丁函数（patch phase）中进行比较，然后将差异应用到 web 页面中。
 ![img](../../assests/vue-walking-throug-a-simple-vue-app-05.png)
+
+## render function
+
+### h difference
+
+in vue2
+
+```js
+render(h){
+    return h('div',{
+        attrs:{
+            id:'app'
+        },
+        on:{
+            click:this.onClick
+        }
+    }, 'hello') // hello 是子组件的模板（也可以是嵌套的数组）
+}
+```
+
+h 的第一个参数是标签名。
+第二个参数是属性对象，包含所有虚拟节点（vnode）上的所有数据、属性，这使得这个 API 过于冗长，必须指明传递给节点的绑定类型。
+第三个参数是子组件的模板（也可以是嵌套的数组，并且嵌套了更多的嵌套的 h 调用）
+
+in vue3
+
+```js
+import { h } from 'vue'
+render (){
+    return h('div',{
+        id:'app',
+        onClick:this.onClick
+    }, 'hello')
+}
+```
+
+h 的第一个参数是标签名。
+第二个参数是属性对象，但永远是一个扁平的对象了。
+第三个参数是子组件的模板（也可以是嵌套的数组，并且嵌套了更多的嵌套的 h 调用）
+另外一点不同是：h 在 Vue3 是直接从 vue 中导入的
+
+### example
+
+#### normal using
+
+```js
+import { h } from "vue";
+
+const App = {
+  render() {
+    return h(
+      "div",
+      {
+        id: "hello",
+      },
+      [h("span", "world")]
+    );
+  },
+};
+
+// <div id="hello"><span>world></span></div>
+```
+
+#### using v-if in h
+
+```js
+import { h } from "vue";
+
+const App = {
+  render() {
+    // v-if="ok"
+    return this.ok ?
+        ? h("div", {id:'hello'}, [h("span", "world")])
+        : this.otherCondition
+            ? h("p","other branch")
+            : h('span')
+  },
+};
+
+// or
+
+const App = {
+  render() {
+    // v-if="ok"
+    let nodeToReturn
+    if(this.ok){
+        nodeToReturn = ...
+    }else if(){
+        nodeToReturn = ...
+    }
+  }
+}
+```
+
+#### using v-for in h
+
+```js
+import { h } from "vue";
+
+const App = {
+  render() {
+    // v-for="item in list"
+    return this.list.map((item) => {
+      return h("div", { key: item.id }, item.text);
+    });
+  },
+};
+```
+
+#### using slots in h
+
+```js
+import { h } from "vue";
+
+const App = {
+  render() {
+    const slot = this.$slots.default
+      ? // 作用域插槽
+        // this.$slots.default({})
+        this.$slots.default()
+      : [];
+  },
+};
+```
