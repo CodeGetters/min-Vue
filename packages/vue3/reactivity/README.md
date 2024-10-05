@@ -1,5 +1,7 @@
 # reactivity
 
+本模块主要实现了创建 JS 响应式对象，同时对响应式对象进行追踪，如果响应式对象发生了变化，那么会触发相应的更新。
+
 ```sh
 pnpm dev vue3 reactivity
 pnpm dev vue3 reactivity -f esm
@@ -20,15 +22,6 @@ pnpm dev vue3 reactivity -f cjs
 ```
 
 ## 核心功能
-
-- 代理
-- reactive 响应式
-- ref 引用
-- effect 副作用
-- 依赖收集
-- 触发更新
-- computed 计算属性
-- 集合类型的处理
 
 - [x] reactive
 - [x] readonly

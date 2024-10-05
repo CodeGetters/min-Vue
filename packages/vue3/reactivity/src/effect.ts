@@ -5,6 +5,7 @@ import { activeEffectScope } from "./effectScope";
 
 let batchDepth = 0;
 let batchedSub: Subscriber | undefined;
+const pausedQueueEffects = new WeakSet<ReactiveEffect>();
 export let shouldTrack = true;
 export let activeSub: Subscriber | undefined;
 export let activeEffect: ReactiveEffect | undefined;
@@ -74,7 +75,6 @@ export class ReactiveEffect<T = any>
    * @internal
    */
   cleanup?: () => void = undefined;
-
   onStop?: () => void;
   scheduler?: EffectScheduler = undefined;
   constructor(public fn: () => T) {
@@ -82,9 +82,29 @@ export class ReactiveEffect<T = any>
       activeEffectScope.effects.push(this);
     }
   }
-  pause(): void {}
-  resume(): void {}
-  notify(): void {}
+  pause(): void {
+    this.flags |= EffectFlags.PAUSE;
+  }
+  resume(): void {
+    if (this.flags & EffectFlags.PAUSE) {
+      this.flags &= ~EffectFlags.PAUSE;
+      if (pausedQueueEffects.has(this)) {
+        pausedQueueEffects.delete(this);
+        this.trigger();
+      }
+    }
+  }
+  notify(): void {
+    if (
+      this.flags & EffectFlags.RUNNING &&
+      !(this.flags & EffectFlags.ALLOW_RECURSE)
+    ) {
+      return;
+    }
+    if (!(this.flags & EffectFlags.NOTIFIED)) {
+      batch(this);
+    }
+  }
   run(): T {
     if (!(this.flags & EffectFlags.ACTIVE)) {
       return this.fn();
@@ -116,8 +136,23 @@ export class ReactiveEffect<T = any>
       this.flags &= ~EffectFlags.ACTIVE;
     }
   }
-  trigger(): void {}
-  runIfDirty(): void {}
+  trigger(): void {
+    if (this.flags & EffectFlags.PAUSE) {
+      pausedQueueEffects.add(this);
+    } else if (this.scheduler) {
+      this.scheduler();
+    } else {
+      this.runIfDirty();
+    }
+  }
+  /**
+   * @internal
+   */
+  runIfDirty(): void {
+    if (isDirty(this)) {
+      this.run();
+    }
+  }
 
   get dirty(): boolean {
     return isDirty(this);
@@ -389,4 +424,10 @@ export function refreshComputed(computed: ComputedRefImpl): undefined {
     // 清除运行标志
     computed.flags &= ~EffectFlags.RUNNING;
   }
+}
+
+export function batch(sub: Subscriber): void {
+  sub.flags |= EffectFlags.NOTIFIED;
+  sub.next = batchedSub;
+  batchedSub = sub;
 }

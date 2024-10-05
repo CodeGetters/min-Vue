@@ -1,10 +1,9 @@
-import { isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
+import { extend, isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
 import { TriggerOpTypes } from "./constant";
 import {
   DebuggerEventExtraInfo,
-  ReactiveEffect,
+  EffectFlags,
   Subscriber,
-  activeEffect,
   activeSub,
   endBatch,
   shouldTrack,
@@ -270,6 +269,7 @@ export function trigger(
           }
           break;
         case TriggerOpTypes.SET:
+          console.log("触发依赖更新....");
           if (isMap(target)) {
             run(depsMap.get(ITERATE_KEY));
           }
