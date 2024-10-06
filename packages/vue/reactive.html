@@ -1,0 +1,98 @@
+<script>
+  let activeEffect;
+  class Dep {
+    subscribers = new Set();
+    depend() {
+      if (activeEffect) {
+        this.subscribers.add(activeEffect);
+      }
+    }
+
+    notify() {
+      this.subscribers.forEach((effect) => {
+        effect();
+      });
+    }
+  }
+
+  function watchEffect(effect) {
+    activeEffect = effect;
+    effect();
+    activeEffect = null;
+  }
+
+  function reactive(raw) {
+    // in Vue2
+    // Object.keys(raw).forEach((key) => {
+    //   const dep = new Dep();
+    //   let value = raw[key];
+    //   Object.defineProperty(raw, key, {
+    //     get() {
+    //         dep.depend();
+    //       return value;
+    //     },
+    //     set(newValue) {
+    //       value = newValue;
+    //       dep.notify();
+    //     },
+    //   });
+    // });
+    // return raw;
+    // in Vue3
+    return new Proxy(raw, reactiveHandlers);
+  }
+
+  /**
+   * 使用 WeakMap 的原因
+   * 1、WeakMap 的 key 只能是对象，不能是原始类型
+   * 2、如果对象本身不再被引用，那么这个对象就会被垃圾回收，同时他在 WeakMap 中对应的值也会被垃圾回收
+   * 3、Map 只能使用 string 或者 symbol 作为 key，但不能被自动进行gc处理
+   * 4、WeakMap 的 key 是不可迭代枚举，而 Map 的 key 是可迭代枚举（key 需要保持在某处的引用不变，这就使得让其不能被进行会回收）
+   */
+  const targetMap = new WeakMap();
+
+  function getDep(target, key) {
+    let depsMap = targetMap.get(target);
+    if (!depsMap) {
+      depsMap = new Map();
+      targetMap.set(target, depsMap);
+    }
+    let dep = depsMap.get(key);
+    if (!dep) {
+      dep = new Dep();
+      depsMap.set(key, dep);
+    }
+    return dep;
+  }
+
+  const reactiveHandlers = {
+    get(target, key, receiver) {
+      const dep = getDep(target, key);
+      dep.depend();
+      return Reflect.get(target, key, receiver);
+    },
+    set(target, key, value, receiver) {
+      const dep = getDep(target, key);
+      const result = Reflect.set(target, key, value, receiver);
+      dep.notify();
+      return result;
+    },
+    has() {},
+    ownKeys() {},
+  };
+
+  const state = reactive({
+    count: 0,
+  });
+
+  watchEffect(() => {
+    // console.log(state.count); // 1
+    // console.log(state.msg); // undefined
+    console.log("msg" in state); // 触发 has trap
+    Object.keys(state).forEach((key) => {
+      console.log(key); // 触发 ownKeys trap
+    });
+  });
+
+  state.count = 1; // 1
+</script>
