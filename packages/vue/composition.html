@@ -1,0 +1,83 @@
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<!-- <script>
+  import { reactive, ref, watchEffect, watch, onMounted, computed } from "vue";
+
+  export default {
+    setup() {
+      const state = reactive({ count: 0 });
+      const count = ref(0);
+      const plusOne = computed(() => state.count + 1);
+
+      watchEffect(() => console.log(state.count));
+
+      watch(
+        () => state.count,
+        (count, oldCount) => {}
+      );
+
+      watch(count, (count, oldCount) => {});
+      watch([count, plusOne], ([count, plusOne], [oldCount, oldPlusOne]) => {});
+    },
+  };
+
+  /**
+   * watch 和 watchEffect 的区别
+   * 1、watch 必须要先定义一个返回某些内容的函数（source），同时还有一个可以接受旧值的回调
+   * 2、watchEffect 获取一个函数，然后立即执行，并且只要有任何变化就重新运行
+   * 3、watchEffect 在依赖项（计算）过程中访问的任何东西都将触发回调
+   *
+   * watch 的好处是：
+   * 1、明确说明什么会触发回调再次运行（回调中依赖的其他属性并不会被认为依赖项）
+   * 2、如果正在执行一些复杂的计算（依赖项），如果计算的最终结果和之前的相同，那么不会调用回调
+   * 3、watch 默认是懒执行的，只有在依赖项发生变化时才会执行回调。而 watchEffect 必须要先收集依赖项，知道什么时候再次执行。
+   */
+</script> -->
+
+<!-- <script>
+  import { reactive, ref, watchEffect, watch } from "vue";
+  export default {
+    props: ["id"],
+    // in Vue2
+    // created() {
+    //   this.fetchData(this.id);
+    // },
+    // watch: {
+    //   id: "fetchData",
+    // },
+    // methods: {
+    //   fetchData(id) {
+    //     // ...
+    //   },
+    // },
+
+    // in Vue3
+    setup(props) {
+      const fetchData = ref(null);
+
+      watchEffect(() => {
+        fetch(`url${props.id}`)
+          .then((res) => res.json())
+          .then((data) => {});
+      });
+
+      onMounted(() => console.log("mounted!"));
+
+    },
+  };
+</script> -->
+
+<script>
+  import { reactive, ref, watchEffect, watch } from "vue";
+
+  function useFeature() {
+    onMounted(() => console.log("mounted"));
+  }
+
+  export default {
+    props: ["id"],
+    setup(props) {
+      useFeature();
+    },
+  };
+</script>
