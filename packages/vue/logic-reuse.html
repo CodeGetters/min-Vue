@@ -1,0 +1,180 @@
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<div id="app"></div>
+
+<!-- in Vue2 Mixins -->
+<!-- <script type="module">
+  const { createApp } = Vue;
+
+  const mouseMixin = {
+    data() {
+      return {
+        x: 0,
+        y: 0,
+      };
+    },
+    methods: {
+      update(e) {
+        this.x = e.pageX;
+        this.y = e.pageY;
+      },
+    },
+    mounted() {
+      window.addEventListener("mousemove", this.update);
+    },
+    unmounted() {
+      window.removeEventListener("mousemove", this.update);
+    },
+  };
+  const App = {
+    /**
+     * mixins 存在的问题
+     * 1、多个 mixins 会被合并到一起，导致数据来源不明确
+     * 2、多个 mixins 会被合并到一起，导致方法来源不明确
+     * 3、多个 mixins 会被合并到一起，导致可能出现命名冲突
+     */
+    mixins: [mouseMixin],
+    template: `{{x}} {{y}}`,
+  };
+
+  createApp(App).mount("#app");
+</script> -->
+
+<!-- 使用高阶函数解决 in Vue2 -->
+<!-- <script type="module">
+  const { createApp, h } = Vue;
+
+  function withMouse(Inner) {
+    return {
+      data() {
+        return {
+          x: 0,
+          y: 0,
+        };
+      },
+      methods: {
+        update(e) {
+          this.x = e.pageX;
+          this.y = e.pageY;
+        },
+      },
+      mounted() {
+        window.addEventListener("mousemove", this.update);
+      },
+      unmounted() {
+        window.removeEventListener("mousemove", this.update);
+      },
+      render() {
+        return h(Inner, {
+          x: this.x,
+          y: this.y,
+        });
+      },
+    };
+  }
+  // 但是这也不能够从根本上解决问题，同时也会存在数据来源不明的问题
+  // const App = withFoo(
+  //   withAnother(
+  //     withMouse({
+  //       props: ["x", "y", "foo", "bar"],
+  //       template: `{{x}} {{y}}`,
+  //     })
+  //   )
+  // );
+  const App = withMouse({
+    props: ["x", "y"],
+    template: `{{x}} {{y}}`,
+  });
+
+  createApp(App).mount("#app");
+</script> -->
+
+<!-- 使用作用域插槽 in Vue2 -->
+<!-- <script type="module">
+  const { createApp, h } = Vue;
+
+  const Mouse = {
+    data() {
+      return {
+        x: 0,
+        y: 0,
+      };
+    },
+    methods: {
+      update(e) {
+        this.x = e.pageX;
+        this.y = e.pageY;
+      },
+    },
+    mounted() {
+      window.addEventListener("mousemove", this.update);
+    },
+    unmounted() {
+      window.removeEventListener("mousemove", this.update);
+    },
+    // template: `<slot :x="x" :y="y" />`,
+    render() {
+      return (
+        this.$slots.default &&
+        this.$slots.default({
+          x: this.x,
+          y: this.y,
+        })
+      );
+    },
+  };
+  const App = {
+    components: { Mouse },
+    // 解决了数据来源不明确、命名冲突
+    // 但是也存在【创建多个组件实例】
+    // template: `<Mouse v-slot="{ x, y }">
+    //     <Foo v-slot="{ x:foo }">
+    //       {{ x }} {{ y }} {{ foo }}
+    //     </Foo>
+    //   </Mouse>`,
+    template: `<Mouse v-slot="{ x, y }">
+          {{ x }} {{ y }}
+      </Mouse>`,
+  };
+
+  createApp(App).mount("#app");
+</script> -->
+
+<!-- Vue3 -->
+<script type="module">
+  const { createApp, h, onMounted, onUnmounted, ref } = Vue;
+
+  function useMouse() {
+    const x = ref(0);
+    const y = ref(0);
+
+    const update = (e) => {
+      x.value = e.pageX;
+      y.value = e.pageY;
+    };
+    onMounted(() => {
+      window.addEventListener("mousemove", update);
+    });
+    onUnmounted(() => {
+      window.removeEventListener("mousemove", update);
+    });
+
+    return { x, y };
+  }
+
+  const App = {
+    setup() {
+      const { x, y } = useMouse();
+      const foo = ref("foo");
+      // const { x: z } = useOtherFeature();
+      return {
+        x,
+        y,
+        foo,
+      };
+    },
+    template: `{{x}} {{y}}`,
+  };
+
+  createApp(App).mount("#app");
+</script>
