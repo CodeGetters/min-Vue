@@ -148,8 +148,6 @@ const reactiveHandlers = {
   ownKeys() {},
 };
 
-// app
-
 function mountApp(component, container) {
   let isMounted = false;
   let prevDom;
@@ -165,21 +163,8 @@ function mountApp(component, container) {
     }
   });
 }
-const App = {
-  data: reactive({
-    count: 0,
-  }),
-  render() {
-    return h(
-      "div",
-      {
-        onClick: () => {
-          this.data.count++;
-        },
-      },
-      String(this.data.count)
-    );
-  },
-};
 
-mountApp(App, document.querySelector("#app"));
+export default function Vue(App, container) {
+  return mountApp(App, document.querySelector(container));
+}
+export { reactive, h };
