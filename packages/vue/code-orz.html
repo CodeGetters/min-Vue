@@ -1,0 +1,209 @@
+当有一个父组件需要分别给多个子组件传递其参数时
+<!-- in Vue2 -->
+<!-- <script>
+  import { reactive, ref, watchEffect, watch } from "vue";
+  export default {
+    props: ["id"],
+    data() {
+      return {
+        foo: 1, // feature A
+        bar: 2, // feature B
+        baz: 3, // feature C
+      };
+    },
+    methods: {
+      one() {}, // feature A
+      two() {}, // feature B
+      three() {}, // feature C
+    },
+    watch: {
+      // ...
+    },
+    computed: {
+      // feature A
+      plusOne() {
+        return this.foo + 1;
+      },
+      // feature B
+      plusTwo() {
+        return this.bar + 2;
+      },
+      // feature C
+      plusThree() {
+        return this.baz + 3;
+      },
+    },
+  };
+</script> -->
+
+<!-- in Vue3 -->
+<!-- <script>
+  import { reactive, ref, watchEffect, watch } from "vue";
+
+  export default {
+    props: ["id"],
+    setup(props) {
+      // feature A
+      const foo = ref(1);
+      const plusOne = computed(() => foo.value + 1);
+      function incrementFoo() {}
+      watchEffect(() => {
+        // ...
+      });
+
+      // feature B
+      const bar = ref(2);
+      const plusTwo = computed(() => bar.value + 2);
+      function incrementBar() {}
+      watchEffect(() => {
+        // ...
+      });
+
+      // feature C
+      const baz = ref(3);
+      const plusThree = computed(() => baz.value + 3);
+      function incrementBaz() {}
+      watchEffect(() => {
+        // ...
+      });
+    },
+  };
+</script> -->
+
+<!-- in Vue3 with big logic -->
+<!-- <script>
+  import { reactive, ref, watchEffect, watch } from "vue";
+
+  function useFeatureA() {
+    const foo = ref(1);
+    const plusOne = computed(() => foo.value + 1);
+    function incrementFoo() {}
+    watchEffect(() => {
+      // ...
+    });
+    return {
+      foo,
+      plusOne,
+    };
+  }
+
+  function useFeatureB() {
+    const bar = ref(2);
+    const plusTwo = computed(() => bar.value + 2);
+    function incrementBar() {}
+    watchEffect(() => {
+      // ...
+    });
+    return {
+      bar,
+      plusTwo,
+    };
+  }
+
+  function useFeatureC() {
+    const baz = ref(3);
+    const plusThree = computed(() => baz.value + 3);
+    function incrementBaz() {}
+    watchEffect(() => {
+      // ...
+    });
+    return {
+      baz,
+      plusThree,
+    };
+  }
+
+  export default {
+    props: ["id"],
+    setup(props) {
+      // feature A
+      const { foo, plusOne } = useFeatureA();
+
+      // feature B
+      const { bar, plusTwo } = useFeatureB();
+
+      // feature C
+      const { baz, plusThree } = useFeatureC();
+
+      return {
+        foo,
+        plusOne,
+        bar,
+        plusTwo,
+        baz,
+        plusThree,
+      };
+    },
+  };
+</script> -->
+
+<!-- in Vue3 with component extends -->
+
+<script>
+  import { reactive, ref, watchEffect, watch } from "vue";
+
+  function useFeatureA() {
+    const foo = ref(1);
+    const plusOne = computed(() => foo.value + 1);
+    function incrementFoo() {}
+    watchEffect(() => {
+      // ...
+    });
+    return {
+      foo,
+      plusOne,
+    };
+  }
+
+  function useFeatureB() {
+    const bar = ref(2);
+    const plusTwo = computed(() => bar.value + 2);
+    function incrementBar() {}
+    watchEffect(() => {
+      // ...
+    });
+    return {
+      bar,
+      plusTwo,
+    };
+  }
+
+  function useFeatureC() {
+    const baz = ref(3);
+    const plusThree = computed(() => baz.value + 3);
+    function incrementBaz() {}
+    watchEffect(() => {
+      // ...
+    });
+    return {
+      baz,
+      plusThree,
+    };
+  }
+
+  export function setup(props) {
+    // feature A
+    const { foo, plusOne } = useFeatureA();
+
+    // feature B
+    const { bar, plusTwo } = useFeatureB();
+
+    // feature C
+    const { baz, plusThree } = useFeatureC();
+
+    return {
+      foo,
+      plusOne,
+      bar,
+      plusTwo,
+      baz,
+      plusThree,
+    };
+  }
+
+  export default {
+    props: ["id"],
+    setup,
+    // auto merge...
+  };
+</script>
