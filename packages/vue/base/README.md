@@ -2,6 +2,14 @@
 
 实现超级简易版的 vue
 
+```bash
+pnpm dev vue base
+
+pnpm dev vue base -f esm
+
+pnpm dev vue base -f cjs
+```
+
 ## 运行流程
 
 在一个具备**模板**和**内部使用的响应对象**的组件中（如下图所示）
