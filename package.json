@@ -9,7 +9,9 @@
     "preinstall": "npx only-allow pnpm",
     "lint-staged": "npx lint-staged",
     "dev": "node scripts/dev.js",
-    "release": "changeset add"
+    "select": "changeset add",
+    "release": "changeset version",
+    "publish": "changeset publish"
   },
   "config": {
     "commitizen": {
