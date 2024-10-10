@@ -1,3 +1,4 @@
 packages:
   - "packages/vue3/*"
+  - "packages/vue/*"
   - "packages/react/*"
