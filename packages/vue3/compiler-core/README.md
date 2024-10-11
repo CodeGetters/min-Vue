@@ -1,5 +1,9 @@
 # compiler-core
 
 ```bash
-pnpm dev mini-vue3 compiler-core -f esm
+pnpm dev compiler-core
+
+pnpm dev compiler-core -p vue3 -f esm
+
+pnpm dev compiler-core -p vue3 -f esm
 ```

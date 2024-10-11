@@ -1,25 +1,49 @@
-import minimist from "minimist";
 import esbuild from "esbuild";
-import { createRequire } from "node:module";
+import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import { dirname, relative, resolve } from "node:path";
+import { polyfillNode } from "esbuild-plugin-polyfill-node";
 
 const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// 获取执行命令的参数---将【node】和【命令文件路径】去掉
-const argv = minimist(process.argv.slice(2)); // 路径解析为【project/package】
-console.log("=====执行命令参数======", argv);
+const {
+  values: { project: rawProject, format: rawFormat },
+  positionals,
+} = parseArgs({
+  allowPositionals: true, // 允许解析位置参数
+  options: {
+    project: {
+      type: "string",
+      short: "p",
+      default: "vue3",
+    },
+    format: {
+      type: "string",
+      short: "f",
+      default: "global",
+    },
+  },
+});
 
-const project = argv._[0] || "vue3";
-const target = argv._[1] || "reactivity";
-const format = argv["f"] || "global";
+console.log("=====运行命令参数======", rawProject, rawFormat, positionals);
+
+/**
+ * @param {string} project 项目名称
+ * @param {string} format 打包格式
+ * @param {string} target 打包目标位置
+ */
+const project = rawProject || "vue3";
+const target = positionals || "reactivity";
+const format = rawFormat || "global";
 
 const pkgBase = `../packages/${project}/${target}`;
 console.log("====pkgBase====", pkgBase);
 const pkg = require(resolve(__dirname, `${pkgBase}/package.json`));
 const options = pkg.buildOptions;
 
+// 最终产物配置
 const outputConfig = {
   esm: {
     file: resolve(__dirname, `${pkgBase}/dist/${target}.esm-bundler.js`),
@@ -34,6 +58,7 @@ const outputConfig = {
     format: "iife",
   },
 };
+
 const outputFormat = outputConfig[format].format;
 const outputFile = outputConfig[format].file;
 
@@ -48,6 +73,10 @@ const plugins = [
     },
   },
 ];
+
+if (outputFormat !== "cjs" && pkg.buildOptions?.enableNonBrowserBranches) {
+  plugins.push(polyfillNode());
+}
 
 // dev mode 使用 esbuild 提速
 esbuild

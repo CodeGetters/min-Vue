@@ -1,8 +1,9 @@
 # shared
 
 ```sh
-pnpm dev vue3 shared
-pnpm dev vue3 shared -f esm
+pnpm dev shared
 
-pnpm dev vue3 shared -f cjs
+pnpm dev shared -p vue3 -f esm
+
+pnpm dev shared -p vue3 -f cjs
 ```

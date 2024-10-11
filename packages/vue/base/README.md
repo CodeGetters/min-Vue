@@ -3,11 +3,11 @@
 实现超级简易版的 vue
 
 ```bash
-pnpm dev vue base
+pnpm dev vue base -p vue
 
-pnpm dev vue base -f esm
+pnpm dev vue base -p vue -f esm
 
-pnpm dev vue base -f cjs
+pnpm dev vue base -p vue -f cjs
 ```
 
 ## 运行流程
