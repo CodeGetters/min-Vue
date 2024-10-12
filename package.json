@@ -9,6 +9,7 @@
     "preinstall": "npx only-allow pnpm",
     "lint-staged": "npx lint-staged",
     "dev": "node scripts/dev.js",
+    "build": "node scripts/build.js",
     "select": "changeset add",
     "release": "changeset version",
     "publish": "changeset publish"
@@ -42,6 +43,7 @@
     "@changesets/cli": "^2.27.8",
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "cz-git": "^1.9.4",
     "esbuild": "^0.24.0",
@@ -50,6 +52,7 @@
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
     "rollup": "^4.22.5",
+    "rollup-plugin-typescript2": "^0.36.0",
     "tslib": "^2.7.0",
     "typescript": "^5.6.2",
     "vitest": "^2.1.1"
