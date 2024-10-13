@@ -135,6 +135,8 @@ function createConfig(format, output, plugins = []) {
     }
   }
 
+  output.sourcemap = true;
+
   //   console.log("===========format========");
   return {
     input: resolve(entryFile),
@@ -149,7 +151,7 @@ function createConfig(format, output, plugins = []) {
       }),
       esbuild({
         tsconfig: path.resolve(__dirname, "tsconfig.json"),
-        sourceMap: true,
+        sourceMap: output.sourcemap,
         minify: false,
         target: "es2019",
       }),
