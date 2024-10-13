@@ -1,18 +1,10 @@
 {
-  "name": "@mini/compiler-core",
+  "name": "@mini/reactive",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "buildOptions": {
-    "name": "compilerCore",
-    "formats": [
-      "cjs",
-      "esm-bundler",
-      "global"
-    ]
   },
   "keywords": [],
   "author": "",

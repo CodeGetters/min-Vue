@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "buildOptions": {
-    "name": "reactivity",
+    "name": "vue3Reactivity",
     "formats": [
       "cjs",
       "esm-bundler",
