@@ -1,10 +1,6 @@
 # mini
 
-- [ ] reactivity
-- [ ] compiler-core
-- [ ] compiler-dom
-- [ ] runtime-core
-- [ ] runtime-dom
+- [ ] vue
 
 ## 运行命令后将自动进入 debug mode
 
@@ -48,4 +44,21 @@ setting.json
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
 }
+```
+
+```bash
+# example for dev or build
+
+pnpm dev
+
+pnpm dev reactivity -p vue3
+
+pnpm dev reactivity -p vue3 -f esm
+
+pnpm build
+
+pnpm build vue/base vue3/reactivity
+
+pnpm build vue/base vue3/reactivity -f esm-bundler
+
 ```

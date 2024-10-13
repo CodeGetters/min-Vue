@@ -21,7 +21,20 @@ const allTargets = fs
 
 const { values, positionals: targets } = parseArgs({
   allowPositionals: true,
-  options: {},
+  options: {
+    formats: {
+      type: "string",
+      short: "f",
+    },
+    prodOnly: {
+      type: "boolean",
+      short: "p",
+    },
+    devOnly: {
+      type: "boolean",
+      short: "d",
+    },
+  },
 });
 
 const { formats, prodOnly, devOnly } = values;
@@ -29,7 +42,7 @@ const { formats, prodOnly, devOnly } = values;
 run();
 
 async function run() {
-  const resolveTargets = targets.length ? "" : allTargets;
+  const resolveTargets = targets.length ? [...targets] : allTargets;
   await buildAll(resolveTargets);
 }
 
