@@ -14,7 +14,8 @@ const packageDir = path.resolve(__dirname, "packages", process.env.TARGET); // �
 const resolve = (/** @type {string} */ p) => path.resolve(packageDir, p); // 解析地址
 const pkg = require(resolve(`package.json`)); // 包信息
 const packageOptions = pkg.buildOptions || {}; // 包配置
-const name = packageOptions.filename || path.basename(packageDir); // 包名
+// const name = packageOptions.filename || path.basename(packageDir); // 包名
+const name = packageOptions.name; // 包名
 // console.log("============packageDir========", packageDir, pkg);
 
 /** @type {Record<PackageFormat, OutputOptions>} */

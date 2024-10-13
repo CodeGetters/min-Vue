@@ -11,12 +11,13 @@
     <!-- <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script> -->
     <script>
       //   const { ref} = Vue;
-      const { ref } = reactivity;
+      const { ref, isReactive } = reactivity;
       const state = ref(1);
       const btn = document.getElementById("btn");
       btn.addEventListener("click", () => {
         watch();
       });
+      console.log(isReactive(state));
       function watch() {
         state.value++;
         console.log(state.value);

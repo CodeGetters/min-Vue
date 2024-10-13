@@ -65,7 +65,11 @@ importers:
 
   packages/vue/base: {}
 
-  packages/vue3/compiler-core: {}
+  packages/vue/reactivity:
+    dependencies:
+      '@mini/shared':
+        specifier: workspace:*
+        version: link:../../vue3/shared
 
   packages/vue3/reactivity:
     dependencies:

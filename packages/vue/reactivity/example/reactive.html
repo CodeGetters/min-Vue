@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="../dist/libreactive.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script>
+      const { isReactive } = Vue;
+      const { reactive, readonly, shallowReactive, shallowReadonly } =
+        libreactive;
+      console.log("===========reactive==============");
+      const state = reactive({ name: "zhangsan" });
+      console.log("state.name", state);
+      console.log(state.name);
+
+      console.log("===========readonly==============");
+      const state2 = readonly({ name: "lisi" });
+      state2.name = "wangwu";
+      console.log(state2.name);
+
+      console.log("===========shallowReactive==============");
+      const state3 = shallowReactive({
+        foo: 1,
+        nested: {
+          bar: 2,
+        },
+      });
+      state3.nested.bar++; // 不是响应式的
+
+      console.log("===========shallowReadonly==============");
+      const state4 = shallowReadonly({ name: "zhaoliu" });
+      state4.name = "wangwu";
+      console.log(state4.name);
+    </script>
+  </body>
+</html>

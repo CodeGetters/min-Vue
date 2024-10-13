@@ -1,8 +1,7 @@
-import { extend, isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
+import { isArray, isIntegerKey, isMap, isSymbol } from "@mini/shared";
 import { TriggerOpTypes } from "./constant";
 import {
   DebuggerEventExtraInfo,
-  EffectFlags,
   Subscriber,
   activeSub,
   endBatch,
