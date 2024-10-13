@@ -10,6 +10,7 @@ import {
   isIntegerKey,
   isObject,
   isSymbol,
+  hasChanged,
 } from "@mini/shared";
 import { ReactiveFlags, TriggerOpTypes } from "./constant";
 import {
@@ -23,7 +24,6 @@ import {
 import { makeMap } from "./makeMap";
 import { ITERATE_KEY, track, trigger } from "./dep";
 import { isRef } from "./ref";
-import { hasChanged } from "@mini/shared/src/general.js";
 
 const isNonTrackableKeys = makeMap(`__proto__,__v_isRef,__isVue`);
 

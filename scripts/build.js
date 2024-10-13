@@ -24,9 +24,7 @@ const { values, positionals: targets } = parseArgs({
   options: {},
 });
 
-const {} = values;
-
-const sizeDir = path.resolve("temp/size");
+const { formats, prodOnly, devOnly } = values;
 
 run();
 
@@ -85,14 +83,23 @@ async function build(target) {
     fs.rmSync(`${pkgDir}/dist`, { recursive: true });
   }
 
-  const env = pkg.buildOption && pkg.buildOptions.env;
+  const env =
+    (pkg.buildOption && pkg.buildOptions.env) ||
+    (devOnly ? "development" : "production");
 
   await exec(
     "rollup",
     [
       "-c",
       "--environment",
-      [`NODE_ENV:${env}`, `TARGET:${target}`].filter(Boolean).join(","),
+      [
+        `NODE_ENV:${env}`,
+        `TARGET:${target}`,
+        formats ? `FORMATS:${formats}` : ``,
+        prodOnly ? `PROD_ONLY:true` : ``,
+      ]
+        .filter(Boolean)
+        .join(","),
     ],
     { stdio: "inherit" }
   );

@@ -8,9 +8,9 @@
   },
   "buildOptions": {
     "name": "compilerCore",
-    "format": [
+    "formats": [
       "cjs",
-      "esm",
+      "esm-bundler",
       "global"
     ]
   },

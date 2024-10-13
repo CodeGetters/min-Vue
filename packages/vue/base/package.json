@@ -8,9 +8,9 @@
   },
   "buildOptions": {
     "name": "base",
-    "format": [
+    "formats": [
       "cjs",
-      "esm",
+      "esm-bundler",
       "global"
     ]
   },

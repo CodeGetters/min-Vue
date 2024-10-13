@@ -27,19 +27,18 @@ const {
   },
 });
 
-console.log("=====运行命令参数======", rawProject, rawFormat, positionals);
-
 /**
  * @param {string} project 项目名称
  * @param {string} format 打包格式
  * @param {string} target 打包目标位置
  */
 const project = rawProject || "vue3";
-const target = positionals || "reactivity";
+const target = positionals.length ? positionals : ["reactivity"];
 const format = rawFormat || "global";
+console.log("=====运行命令参数======", rawProject, rawFormat, target);
 
 const pkgBase = `../packages/${project}/${target}`;
-console.log("====pkgBase====", pkgBase);
+// console.log("====pkgBase====", pkgBase);
 const pkg = require(resolve(__dirname, `${pkgBase}/package.json`));
 const options = pkg.buildOptions;
 
@@ -47,7 +46,7 @@ const options = pkg.buildOptions;
 const outputConfig = {
   esm: {
     file: resolve(__dirname, `${pkgBase}/dist/${target}.esm-bundler.js`),
-    format: "esm",
+    format: "es",
   },
   cjs: {
     file: resolve(__dirname, `${pkgBase}/dist/${target}.cjs.js`),

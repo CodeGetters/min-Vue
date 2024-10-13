@@ -8,7 +8,7 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      import Vue, { reactive, h } from "./index.js";
+      import { mountApp, reactive, h } from "./index.js";
       // app
       const App = {
         data: reactive({
@@ -26,7 +26,7 @@
           );
         },
       };
-      Vue(App, "#app");
+      mountApp(App, document.querySelector("#app"));
     </script>
   </body>
 </html>
