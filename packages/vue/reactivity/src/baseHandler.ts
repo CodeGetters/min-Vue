@@ -8,7 +8,6 @@ class BaseReactiveHandler {
     protected readonly _isShallow = false
   ) {}
   get(target, key: string | symbol, receiver: object): any {
-    warn("get", target, key, receiver);
     const res = Reflect.get(target, key, receiver); // target[key]
     const isReadonly = this._isReadonly,
       isShallow = this._isShallow;
