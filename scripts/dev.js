@@ -41,19 +41,20 @@ const pkgBase = `../packages/${project}/${target}`;
 // console.log("====pkgBase====", pkgBase);
 const pkg = require(resolve(__dirname, `${pkgBase}/package.json`));
 const options = pkg.buildOptions;
+const name = options.name;
 
 // 最终产物配置
 const outputConfig = {
   esm: {
-    file: resolve(__dirname, `${pkgBase}/dist/${target}.esm-bundler.js`),
+    file: resolve(__dirname, `${pkgBase}/dist/${name}.esm-bundler.js`),
     format: "es",
   },
   cjs: {
-    file: resolve(__dirname, `${pkgBase}/dist/${target}.cjs.js`),
+    file: resolve(__dirname, `${pkgBase}/dist/${name}.cjs.js`),
     format: "cjs",
   },
   global: {
-    file: resolve(__dirname, `${pkgBase}/dist/${target}.global.js`),
+    file: resolve(__dirname, `${pkgBase}/dist/${name}.global.js`),
     format: "iife",
   },
 };

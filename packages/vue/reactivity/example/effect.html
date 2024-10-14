@@ -9,18 +9,18 @@
     <div id="app"></div>
 
     <script src="../dist/libreactive.global.js"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script> -->
 
     <script>
-      const { effect } = Vue;
-      const { reactive } = libreactive;
+      // const { effect } = Vue;
+      const { reactive, effect } = libreactive;
       const state = reactive({ name: "zhangsan", age: 18 });
       const app = document.getElementById("app");
       effect(
         () => {
           app.innerHTML = state.name + state.age;
         },
-        { lazy: true }
+        { lazy: false }
       );
       setTimeout(() => {
         state.age = 20;

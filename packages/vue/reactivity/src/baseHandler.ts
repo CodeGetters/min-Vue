@@ -1,6 +1,8 @@
 import { isObject } from "@mini/shared";
 import { reactive, readonly } from "./reactive";
 import { warn } from "./warning";
+import { track } from "./deps";
+import { TriggerOpTypes } from "./constant";
 
 class BaseReactiveHandler {
   constructor(
@@ -15,6 +17,7 @@ class BaseReactiveHandler {
     // 不是只读
     if (!isReadonly) {
       // 收集依赖
+      track(target, TriggerOpTypes.SET, key);
     }
 
     // 判断是否是浅层响应式

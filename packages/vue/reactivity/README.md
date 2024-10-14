@@ -1,5 +1,11 @@
 # Reactivity
 
+```bash
+pnpm dev reactivity -p vue
+
+pnpm dev reactivity -p vue -f esm
+```
+
 此包旨在于提供如下几个 API：
 
 - ref
