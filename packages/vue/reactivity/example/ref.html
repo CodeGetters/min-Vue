@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="../dist/libreactive.global.js"></script>
+    <!-- <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script> -->
+
+    <script>
+      //   const { effect, ref } = Vue;
+      const { ref, effect } = libreactive;
+      const app = document.getElementById("app");
+      const name = ref("zhangsan");
+      console.log("name", name);
+      effect(
+        () => {
+          app.innerHTML = name.value;
+        },
+        { lazy: false }
+      );
+      setTimeout(() => {
+        name.value = "lisi";
+      }, 2000);
+    </script>
+  </body>
+</html>

@@ -14,11 +14,11 @@
     <script>
       // const { effect } = Vue;
       const { reactive, effect } = libreactive;
-      const state = reactive({ name: "zhangsan", age: 18, list: [0] });
+      const state = reactive({ name: "zhangsan", age: 18, list: [0, 1] });
       const app = document.getElementById("app");
       effect(
         () => {
-          app.innerHTML = state.name + state.age + state.list[0];
+          app.innerHTML = state.name + state.age + state.list[1];
           // effect(
           //   () => {
           //     state.age;
@@ -37,7 +37,8 @@
       );
       setTimeout(() => {
         state.name = "lisi";
-        state.list[1] = 55;
+        state.list[10] = 55;
+        // state.list.length = 1;
       }, 2000);
     </script>
   </body>
