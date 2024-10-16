@@ -1,3 +1,14 @@
+/**
+ * ====================================================================
+ *
+ * @file：Vue3.5 之前的响应式依赖收集track、依赖更新trigger
+ *
+ *
+ * 依赖收集track
+ * 依赖更新trigger
+ *
+ * ====================================================================
+ */
 import { isArray, isIntegerKey } from "@mini/shared";
 import { TriggerOpTypes } from "./constant";
 import { activeEffect } from "./effect";
