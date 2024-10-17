@@ -1,0 +1,23 @@
+{
+  "name": "@min/runtime-dom",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "buildOptions": {
+    "name": "libRuntimeDom",
+    "formats": [
+      "cjs",
+      "esm-bundler",
+      "global"
+    ]
+  },
+  "dependencies": {
+    "@mini/shared": "workspace:*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -35,6 +35,17 @@ export const isIntegerKey = (key: unknown): boolean =>
   // 最后将字符串转换为整数，如果转换后的值和原始值相等，则说明是整数
   "" + parseInt(key, 10) === key;
 
+/**
+ * 判断一个字符串是否以 "on" 开头，后面跟着一个大写字母
+ * @param key 要检查的字符串
+ * @returns {boolean} 如果符合条件返回 true，否则返回 false
+ */
+export const isOn = (key: string): boolean =>
+  key.charCodeAt(0) === 111 /* o */ &&
+  key.charCodeAt(1) === 110 /* n */ &&
+  // 检查第三个字符是否为大写字母
+  (key.charCodeAt(2) > 122 || key.charCodeAt(2) < 97);
+
 export const objectToString: typeof Object.prototype.toString =
   Object.prototype.toString;
 

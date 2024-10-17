@@ -4,6 +4,9 @@
 pnpm dev reactivity -p vue
 
 pnpm dev reactivity -p vue -f esm
+
+pnpm build vue3/reactivity
+
 ```
 
 此包旨在于提供如下几个 API：

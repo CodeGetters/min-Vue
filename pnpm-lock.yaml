@@ -71,6 +71,14 @@ importers:
         specifier: workspace:*
         version: link:../../vue3/shared
 
+  packages/vue/runtime-core: {}
+
+  packages/vue/runtime-dom:
+    dependencies:
+      '@mini/shared':
+        specifier: workspace:*
+        version: link:../../vue3/shared
+
   packages/vue3/reactivity:
     dependencies:
       '@mini/shared':
