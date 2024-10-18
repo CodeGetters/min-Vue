@@ -1,5 +1,3 @@
-import { hyphenate } from "@mini/shared";
-
 /**
  * ====================================================================
  *
@@ -12,6 +10,8 @@ import { hyphenate } from "@mini/shared";
  *
  * ====================================================================
  */
+import { hyphenate } from "@mini/shared";
+
 interface Invoker extends EventListener {
   value: EventValue;
   attached: number;
