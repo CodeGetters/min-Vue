@@ -29,6 +29,9 @@
       "global"
     ]
   },
+  "dependencies": {
+    "@mini/shared": "workspace:*"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC"

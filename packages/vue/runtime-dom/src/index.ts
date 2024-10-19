@@ -1,9 +1,14 @@
 /**
  * ====================================================================
  *
- * @file runtime-dom.ts
- * 该文件包含了与DOM相关的运行时功能，包括创建应用、渲染器和容器规范化等
- *
+ * @file runtime-dom
+ * 1、合并 patchProps 和 nodeOps，创建渲染器选项---rendererOptions
+ * 2、使用懒加载创建渲染器 renderer 且将操作 DOM 选项传入到其中（在需要时才进行某些操作，而不是在初始化进行）
+ *    a.创建懒加载时，使用的是 runtime-core 中的 createRenderer 函数
+ *    b.createRenderer 会调用 baseCreateRenderer 函数
+ *    c.baseCreateRenderer 会返回一个包含 mount 方法的对象
+ *    d.对返回的 mount 重写，使其在挂载前清空容器的内容
+ * 3、返回 app 实例
  * ====================================================================
  */
 import { extend, isString } from "@mini/shared";
@@ -16,14 +21,14 @@ const rendererOptions = /*@__PURE__*/ extend({ patchProps }, nodeOps);
 
 /**
  * 创建应用的函数，返回一个带有自定义mount方法的应用实例
- * @param {...any} args - 传递给createApp的参数---rootComponent、rootProps
+ * @param {...any} args - 传递给 createApp 的参数---rootComponent、rootProps
  * @returns {Object} 返回一个应用实例
  */
 export const createApp = (...args) => {
-  // 使用ensureRenderer()获取渲染器，并调用其createApp方法创建应用实例
+  // 使用 ensureRenderer() 获取渲染器，并调用其 createApp 方法创建应用实例
   const app = ensureRenderer().createApp(...args);
   const { mount } = app;
-  // 重写mount方法
+  // 重写 mount 方法
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
     const container = normalizeContainer(containerOrSelector);
     if (!container) return;
