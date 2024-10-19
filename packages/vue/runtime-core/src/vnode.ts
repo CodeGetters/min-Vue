@@ -60,12 +60,27 @@ function createBaseVNode(
 ) {
   const vnode = {
     _v_isVnode: true,
+    __v_skip: true,
     type,
     props,
-    children,
     key: props && props.key, // key 用于 diff 算法
     el: null, // el 用于将 vnode 和真实 DOM 进行关联
+    slotScopeIds: null,
+    children,
+    component: null,
+    suspense: null,
+    ssContent: null,
+    ssFallback: null,
+    dirs: null,
+    transition: null,
+    anchor: null,
+    target: null,
+    targetStart: null,
+    targetAnchor: null,
+    staticCount: 0,
     shapeFlag,
+    dynamicChildren: null,
+    appContext: null,
   };
 
   if (needFullChildrenNormalization) {

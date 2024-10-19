@@ -73,6 +73,9 @@ importers:
 
   packages/vue/runtime-core:
     dependencies:
+      '@mini/libreactive':
+        specifier: workspace:*
+        version: link:../reactivity
       '@mini/shared':
         specifier: workspace:*
         version: link:../../vue3/shared

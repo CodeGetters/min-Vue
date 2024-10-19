@@ -1,6 +1,11 @@
 # mini
 
-- [ ] vue
+- [ ] vue3
+  - [x] base
+  - [x] reactive
+  - [ ] runtime-dom
+  - [ ] runtime-core
+- [ ] react
 
 ## 运行命令后将自动进入 debug mode
 

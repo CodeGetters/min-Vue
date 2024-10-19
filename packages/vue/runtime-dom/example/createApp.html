@@ -14,8 +14,11 @@
       const { createApp } = libRuntimeDom;
       // const { createApp } = Vue;
       const App = {
+        setup(props, context) {
+          console.log("setup", props, context);
+        },
         render() {
-          console.log(1000);
+          console.log("render", 1000);
         },
       };
       createApp(App, { name: "zhangsan", age: 10 }).mount("#app");

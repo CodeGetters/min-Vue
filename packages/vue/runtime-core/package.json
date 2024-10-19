@@ -30,7 +30,8 @@
     ]
   },
   "dependencies": {
-    "@mini/shared": "workspace:*"
+    "@mini/shared": "workspace:*",
+    "@mini/libreactive": "workspace:*"
   },
   "keywords": [],
   "author": "",
