@@ -1,2 +1,1 @@
-let a = {};
-export default a;
+export { createRenderer } from "./renderer";
