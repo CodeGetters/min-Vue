@@ -1,3 +1,3 @@
 "use strict";
 
-module.exports = require("./dist/reactive.cjs.js");
+module.exports = require("./dist/libReactive.cjs.js");

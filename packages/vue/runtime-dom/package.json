@@ -6,6 +6,21 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/libRuntimeDom.d.ts",
+      "node": {
+        "production": "./dist/libRuntimeDom.cjs.prod.js",
+        "development": "./dist/libRuntimeDom.cjs.js",
+        "default": "./index.js"
+      },
+      "module": "./dist/libRuntimeDom.esm-bundler.js",
+      "import": "./dist/libRuntimeDom.esm-bundler.js",
+      "require": "./index.js"
+    },
+    "./*": "./*"
+  },
+  "sideEffects": false,
   "buildOptions": {
     "name": "libRuntimeDom",
     "formats": [
@@ -15,7 +30,8 @@
     ]
   },
   "dependencies": {
-    "@mini/shared": "workspace:*"
+    "@mini/shared": "workspace:*",
+    "@mini/runtime-core": "workspace:*"
   },
   "keywords": [],
   "author": "",

@@ -6,8 +6,22 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/libReactive.d.ts",
+      "node": {
+        "production": "./dist/libReactive.cjs.prod.js",
+        "development": "./dist/libReactive.cjs.js",
+        "default": "./index.js"
+      },
+      "module": "./dist/libReactive.esm-bundler.js",
+      "import": "./dist/libReactive.esm-bundler.js",
+      "require": "./index.js"
+    },
+    "./*": "./*"
+  },
   "buildOptions": {
-    "name": "libreactive",
+    "name": "libReactive",
     "formats": [
       "cjs",
       "esm-bundler",

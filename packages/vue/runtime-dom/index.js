@@ -1,3 +1,3 @@
 "use strict";
 
-module.exports = require("./dist/libruntimedom.cjs.js");
+module.exports = require("./dist/libRuntimeDom.cjs.js");

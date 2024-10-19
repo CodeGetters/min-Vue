@@ -75,6 +75,9 @@ importers:
 
   packages/vue/runtime-dom:
     dependencies:
+      '@mini/runtime-core':
+        specifier: workspace:*
+        version: link:../runtime-core
       '@mini/shared':
         specifier: workspace:*
         version: link:../../vue3/shared
