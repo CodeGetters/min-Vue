@@ -33,63 +33,65 @@ const {
  * @param {string} target 打包目标位置
  */
 const project = rawProject || "vue3";
-const target = positionals.length ? positionals : ["reactivity"];
+const targets = positionals.length ? positionals : ["reactivity"];
 const format = rawFormat || "global";
-console.log("=====运行命令参数======", rawProject, rawFormat, target);
+console.log("=====运行命令参数======", rawProject, rawFormat, targets);
 
-const pkgBase = `../packages/${project}/${target}`;
-// console.log("====pkgBase====", pkgBase);
-const pkg = require(resolve(__dirname, `${pkgBase}/package.json`));
-const options = pkg.buildOptions;
-const name = options.name;
+for (const target of targets) {
+  const pkgBase = `../packages/${project}/${target}`;
+  // console.log("====pkgBase====", pkgBase);
+  const pkg = require(resolve(__dirname, `${pkgBase}/package.json`));
+  const options = pkg.buildOptions;
+  const name = options.name;
 
-// 最终产物配置
-const outputConfig = {
-  esm: {
-    file: resolve(__dirname, `${pkgBase}/dist/${name}.esm-bundler.js`),
-    format: "es",
-  },
-  cjs: {
-    file: resolve(__dirname, `${pkgBase}/dist/${name}.cjs.js`),
-    format: "cjs",
-  },
-  global: {
-    file: resolve(__dirname, `${pkgBase}/dist/${name}.global.js`),
-    format: "iife",
-  },
-};
-
-const outputFormat = outputConfig[format].format;
-const outputFile = outputConfig[format].file;
-
-/** @type {Array<import('esbuild').Plugin>} */
-const plugins = [
-  {
-    name: "log-rebuild",
-    setup(build) {
-      build.onEnd(() => {
-        console.log(`built: ${relative(process.cwd(), outputFile)}`);
-      });
+  // 最终产物配置
+  const outputConfig = {
+    esm: {
+      file: resolve(__dirname, `${pkgBase}/dist/${name}.esm-bundler.js`),
+      format: "es",
     },
-  },
-];
+    cjs: {
+      file: resolve(__dirname, `${pkgBase}/dist/${name}.cjs.js`),
+      format: "cjs",
+    },
+    global: {
+      file: resolve(__dirname, `${pkgBase}/dist/${name}.global.js`),
+      format: "iife",
+    },
+  };
 
-if (outputFormat !== "cjs" && pkg.buildOptions?.enableNonBrowserBranches) {
-  plugins.push(polyfillNode());
+  const outputFormat = outputConfig[format].format;
+  const outputFile = outputConfig[format].file;
+
+  /** @type {Array<import('esbuild').Plugin>} */
+  const plugins = [
+    {
+      name: "log-rebuild",
+      setup(build) {
+        build.onEnd(() => {
+          console.log(`built: ${relative(process.cwd(), outputFile)}`);
+        });
+      },
+    },
+  ];
+
+  if (outputFormat !== "cjs" && pkg.buildOptions?.enableNonBrowserBranches) {
+    plugins.push(polyfillNode());
+  }
+
+  // dev mode 使用 esbuild 提速
+  esbuild
+    .context({
+      entryPoints: [resolve(__dirname, `${pkgBase}/src/index.ts`)],
+      // drop: ["debugger", "console"], // 在构建之前编辑源代码以删除某些构造
+      outfile: outputFile,
+      bundle: true, // 是否打包到
+      minify: false, // 是否进行代码压缩
+      sourcemap: true,
+      format: outputFormat,
+      globalName: options.name,
+      platform: outputFormat === "cjs" ? "node" : "browser",
+      plugins,
+    })
+    .then((ctx) => ctx.watch());
 }
-
-// dev mode 使用 esbuild 提速
-esbuild
-  .context({
-    entryPoints: [resolve(__dirname, `${pkgBase}/src/index.ts`)],
-    // drop: ["debugger", "console"], // 在构建之前编辑源代码以删除某些构造
-    outfile: outputFile,
-    bundle: true, // 是否打包到
-    minify: false, // 是否进行代码压缩
-    sourcemap: true,
-    format: outputFormat,
-    globalName: options.name,
-    platform: outputFormat === "cjs" ? "node" : "browser",
-    plugins,
-  })
-  .then((ctx) => ctx.watch());
