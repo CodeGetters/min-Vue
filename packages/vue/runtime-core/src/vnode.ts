@@ -114,3 +114,7 @@ function normalizeChildren(vnode, children: unknown): void {
   // 等价于 vnode.shapeFlag = vnode.shapeFlag | type
   vnode.shapeFlag |= type;
 }
+
+export function isVNode(value: any) {
+  return value ? value._v_isVnode === true : false;
+}

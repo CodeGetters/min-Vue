@@ -27,7 +27,7 @@ export class ReactiveEffect<T = any> {
 
 export function effect<T = any>(fn: () => T, options?) {
   const e = createReactiveEffect(fn, options);
-  if (options && !options.lazy) {
+  if (!options || (options && !options.lazy)) {
     e();
   }
   return e;

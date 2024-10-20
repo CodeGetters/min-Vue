@@ -22,12 +22,14 @@ import { patchEvent } from "./modules/events";
 import { patchDOMProps } from "./modules/props";
 import { isOn } from "@mini/shared";
 
-export const patchProps = (el, key, prevKey, nextValue) => {
+export const patchProp = (el, key, prevKey, nextValue) => {
   switch (key) {
     case "class":
       patchClass(el, nextValue);
+      break;
     case "style":
       patchStyle(el, prevKey, nextValue);
+      break;
     default:
       if (isOn(key)) {
         patchEvent(el, key, nextValue);

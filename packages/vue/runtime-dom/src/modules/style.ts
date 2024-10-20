@@ -13,10 +13,10 @@
  * ====================================================================
  */
 // TODO：
-// import { isString } from "@mini/shared";
 type Style = string | Record<string, string | string[]> | null;
 
 export function patchStyle(el: Element, prev, next) {
+  console.log("style", prev, next);
   const style = (el as HTMLElement).style;
   //   const isStringClass = isString(next);
   if (next == null) {
@@ -28,9 +28,9 @@ export function patchStyle(el: Element, prev, next) {
           delete style[key];
         }
       }
-      for (const key in next) {
-        style[key] = next[key];
-      }
+    }
+    for (const key in next) {
+      style[key] = next[key];
     }
   }
 }

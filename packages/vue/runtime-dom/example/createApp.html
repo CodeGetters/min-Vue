@@ -11,11 +11,11 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <script>
-      const { createApp } = libRuntimeDom;
+      const { createApp, h } = libRuntimeDom;
       // const { createApp } = Vue;
       const App = {
         setup(props, context) {
-          console.log("setup arguments", props, context);
+          // console.log("setup arguments", props, context);
           // props.name = "lisi";
           // return () => {
           //   console.log("setup return a function");
@@ -27,7 +27,9 @@
           };
         },
         render(proxy) {
-          console.log("render arguments", proxy.name);
+          // console.log("render arguments", proxy.name);
+          // console.log("this", this, proxy);
+          return h("div", { style: { color: "red" } }, "hello");
         },
       };
       createApp(App, { name: "zhangsan", age: 10 }).mount("#app");

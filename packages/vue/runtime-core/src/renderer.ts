@@ -18,6 +18,7 @@
  *
  * ====================================================================
  */
+import { effect } from "@mini/reactivity";
 import { createAppAPI } from "./apiCreateApp";
 import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "./shapeFlags";
@@ -39,6 +40,18 @@ export function createRenderer(options, createHydrationFns?) {
  * @returns {Object} 返回包含render和createApp方法的对象
  */
 function baseCreateRenderer(options, createHydrationFns?): any {
+  const {
+    insert: hostInsert,
+    remove: hostRemove,
+    patchProp: hostPatchProp,
+    createElement: hostCreateElement,
+    createText: hostCreateText,
+    createComment: hostCreateComment,
+    setText: hostSetText,
+    setElementText: hostSetElementText,
+    parentNode: hostParentNode,
+  } = options;
+
   /**
    * 更新或创建节点
    * @param {VNode | null} n1 - 旧的虚拟节点
@@ -46,18 +59,49 @@ function baseCreateRenderer(options, createHydrationFns?): any {
    * @param {Element} container - 容器元素
    * @param {Element | null} anchor - 锚点元素（可选）
    */
-  const patch = (n1, n2, container, anchor = null) => {
+  const patch = (n1, n2, container, anchor = null, parentComponent = null) => {
     if (n1 === n2) return;
 
     const { shapeFlag } = n2;
     if (shapeFlag & ShapeFlags.ELEMENT) {
-      processElement(n1, n2, container, anchor);
+      processElement(n1, n2, container, anchor, parentComponent);
     } else if (shapeFlag & ShapeFlags.COMPONENT) {
       processComponent(n1, n2, container, anchor);
     }
   };
 
-  const processElement = (n1, n2, container, anchor) => {};
+  /****************************处理元素**************************/
+
+  const processElement = (n1, n2, container, anchor, parentComponent) => {
+    if (n1 == null) {
+      mountElement(n2, container, anchor, parentComponent);
+    } else {
+      patchElement(n1, n2, parentComponent);
+    }
+  };
+
+  const mountElement = (vnode, container, anchor, parentComponent) => {
+    // 创建元素
+    let el = (vnode.el = hostCreateElement(vnode.type));
+    const { props } = vnode;
+    if (props) {
+      // props 存在，遍历 props 并设置属性
+      for (const key in props) {
+        if (key !== "value") {
+          hostPatchProp(el, key, null, props[key]);
+        }
+        if ("value" in props) {
+          hostPatchProp(el, "value", null, props.value);
+        }
+      }
+    }
+    // 插入到容器中
+    hostInsert(el, container);
+  };
+
+  const patchElement = (n1, n2, parentComponent) => {};
+
+  /****************************处理组件**************************/
 
   /**
    * 组件的创建
@@ -88,16 +132,29 @@ function baseCreateRenderer(options, createHydrationFns?): any {
     setupComponent(instance);
 
     // 设置渲染效果，这里会创建一个 effect 让 renderer 执行
-    setupRenderEffect();
+    setupRenderEffect(instance, initialVNode, container);
   };
 
   // 组件的更新
   const updateComponent = () => {};
 
-  const setupRenderEffect = () => {};
+  const setupRenderEffect = (instance, initialVNode, container) => {
+    // TODO:
+    // 在 effect 中调用 render 以便在 render 中收集依赖
+    // 属性改变时，effect 会重新执行
+    effect(function componentEffect() {
+      // 第一次加载
+      if (!instance.isMounted) {
+        const proxy = instance.proxy;
+        const vnode = instance.render.call(proxy, proxy);
+        // console.log("渲染节点 vnode", vnode); --> 这里渲染节点 vnode
+        // 渲染子树
+        patch(null, vnode, container);
+      }
+    });
+  };
 
   const render = (vnode, container, namespace) => {
-    console.log("vnode", vnode);
     // 第一次渲染
     patch(null, vnode, container);
   };

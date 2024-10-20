@@ -2,7 +2,7 @@
  * ====================================================================
  *
  * @file runtime-dom
- * 1、合并 patchProps 和 nodeOps，创建渲染器选项---rendererOptions
+ * 1、合并 patchProp 和 nodeOps，创建渲染器选项---rendererOptions
  * 2、使用懒加载创建渲染器 renderer 且将操作 DOM 选项传入到其中（在需要时才进行某些操作，而不是在初始化进行）
  *    a.创建懒加载时，使用的是 runtime-core 中的 createRenderer 函数
  *    b.createRenderer 会调用 baseCreateRenderer 函数
@@ -13,11 +13,11 @@
  */
 import { extend, isString } from "@mini/shared";
 import { nodeOps } from "./nodeOps";
-import { patchProps } from "./patchOps";
+import { patchProp } from "./patchOps";
 import { createRenderer } from "@mini/runtime-core";
 
 // 创建渲染器选项，合并 patchProps 和 nodeOps
-const rendererOptions = /*@__PURE__*/ extend({ patchProps }, nodeOps);
+const rendererOptions = /*@__PURE__*/ extend({ patchProp }, nodeOps);
 
 /**
  * 创建应用的函数，返回一个带有自定义mount方法的应用实例
@@ -72,3 +72,5 @@ function normalizeContainer(
   }
   return container;
 }
+
+export * from "@mini/runtime-core";
