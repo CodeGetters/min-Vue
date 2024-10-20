@@ -1,3 +1,4 @@
+export const NOOP = (): void => {};
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 /**
  * 检查对象（val）中是否具有指定的属性（key）
@@ -34,6 +35,16 @@ export const isIntegerKey = (key: unknown): boolean =>
   key[0] !== "-" &&
   // 最后将字符串转换为整数，如果转换后的值和原始值相等，则说明是整数
   "" + parseInt(key, 10) === key;
+
+export const isPromise = <T = any>(val: unknown): val is Promise<T> => {
+  return (
+    (isObject(val) || isFunction(val)) &&
+    // 检查值是否具有 then 方法
+    isFunction((val as any).then) &&
+    // 检查值是否具有 catch 方法
+    isFunction((val as any).catch)
+  );
+};
 
 /**
  * 判断一个字符串是否以 "on" 开头，后面跟着一个大写字母

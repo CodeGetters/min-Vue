@@ -15,10 +15,19 @@
       // const { createApp } = Vue;
       const App = {
         setup(props, context) {
-          console.log("setup", props, context);
+          console.log("setup arguments", props, context);
+          // props.name = "lisi";
+          // return () => {
+          //   console.log("setup return a function");
+          // };
+          // console.log("setup return a object")
+          return {
+            name: props,
+            age: 10,
+          };
         },
         render(proxy) {
-          console.log("render", proxy.name);
+          console.log("render arguments", proxy.name);
         },
       };
       createApp(App, { name: "zhangsan", age: 10 }).mount("#app");
