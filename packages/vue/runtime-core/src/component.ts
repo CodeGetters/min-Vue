@@ -1,7 +1,8 @@
 import { EMPTY_OBJ } from "@mini/shared";
 import { ShapeFlags } from "./shapeFlags";
-import { Data } from "./renderer";
+import { type Data } from "./renderer";
 import { TrackOpTypes, track } from "@mini/reactivity";
+import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 
 let uid = 0;
 
@@ -72,6 +73,10 @@ export function isStatefulComponent(instance): number {
  */
 function setupStatefulComponent(instance) {
   const Component = instance.type;
+  // instance.accessCache = Object.create(null);
+
+  // 创建组件实例的代理对象
+  instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers);
   const { setup } = Component;
 
   if (setup) {
@@ -79,6 +84,8 @@ function setupStatefulComponent(instance) {
       setup.length > 1 ? createSetupContext(instance) : null);
     // 调用 setup 函数，传入 props 和 setupContext
     setup(instance.props, setupContext);
+    // 调用组件的 render 函数，传入代理对象
+    Component.render(instance.proxy);
   }
 }
 
@@ -100,7 +107,11 @@ export function createSetupContext(instance) {
   };
 }
 
-const attrsProxyHandlers = {
+export function handleSetupResult() {}
+
+export function finishComponentSetup() {}
+
+const attrsProxyHandlers: ProxyHandler<any> = {
   get(target: Data, key: string) {
     track(target, TrackOpTypes.GET, "");
     return target[key];

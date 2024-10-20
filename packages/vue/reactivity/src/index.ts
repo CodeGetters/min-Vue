@@ -11,4 +11,4 @@ export { ref, shallowRef } from "./ref";
 
 export { track } from "./deps";
 
-export { TrackOpTypes } from "./constant";
+export { TrackOpTypes, ReactiveFlags } from "./constant";

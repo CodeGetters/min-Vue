@@ -17,8 +17,8 @@
         setup(props, context) {
           console.log("setup", props, context);
         },
-        render() {
-          console.log("render", 1000);
+        render(proxy) {
+          console.log("render", proxy.name);
         },
       };
       createApp(App, { name: "zhangsan", age: 10 }).mount("#app");
