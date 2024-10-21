@@ -29,7 +29,9 @@
         render(proxy) {
           // console.log("render arguments", proxy.name);
           // console.log("this", this, proxy);
-          return h("div", { style: { color: "red" } }, "hello");
+          // return h("div", { style: { color: "red" } }, "hello");
+          // return h("div", { style: { color: "red" } }, ["hello"]);
+          return h("div", { style: { color: "red" } }, [h("div", {}, "hello")]);
         },
       };
       createApp(App, { name: "zhangsan", age: 10 }).mount("#app");

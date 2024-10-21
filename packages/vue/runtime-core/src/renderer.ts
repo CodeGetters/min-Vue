@@ -22,6 +22,7 @@ import { effect } from "@mini/reactivity";
 import { createAppAPI } from "./apiCreateApp";
 import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "./shapeFlags";
+import { normalizeVNode, Text } from "./vnode";
 
 export type Data = Record<string, unknown>;
 
@@ -62,11 +63,38 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const patch = (n1, n2, container, anchor = null, parentComponent = null) => {
     if (n1 === n2) return;
 
-    const { shapeFlag } = n2;
-    if (shapeFlag & ShapeFlags.ELEMENT) {
-      processElement(n1, n2, container, anchor, parentComponent);
-    } else if (shapeFlag & ShapeFlags.COMPONENT) {
-      processComponent(n1, n2, container, anchor);
+    const { shapeFlag, type } = n2;
+    switch (type) {
+      case Text:
+        // 文本节点
+        processText(n1, n2, container, anchor);
+        break;
+      default:
+        if (shapeFlag & ShapeFlags.ELEMENT) {
+          // 元素
+          processElement(n1, n2, container, anchor, parentComponent);
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 文本
+          processComponent(n1, n2, container, anchor);
+        }
+    }
+  };
+
+  /****************************处理文本**************************/
+
+  const processText = (n1, n2, container, anchor) => {
+    if (n1 === null) {
+      hostInsert(
+        (n2.el = hostCreateText(n2.children as string)),
+        container,
+        anchor
+      );
+    } else {
+      // 如果旧节点存在，更新文本内容
+      const el = (n2.el = n1.el!);
+      if (n2.children !== n1.children) {
+        hostSetText(el, n2.children as string);
+      }
     }
   };
 
@@ -83,7 +111,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const mountElement = (vnode, container, anchor, parentComponent) => {
     // 创建元素
     let el = (vnode.el = hostCreateElement(vnode.type));
-    const { props } = vnode;
+    const { props, shapeFlag } = vnode;
     if (props) {
       // props 存在，遍历 props 并设置属性
       for (const key in props) {
@@ -95,11 +123,24 @@ function baseCreateRenderer(options, createHydrationFns?): any {
         }
       }
     }
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      hostSetElementText(el, vnode.children as string);
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      mountChildren(vnode.children, el, null, parentComponent);
+    }
     // 插入到容器中
     hostInsert(el, container);
   };
 
   const patchElement = (n1, n2, parentComponent) => {};
+
+  const mountChildren = (children, container, anchor, parentComponent) => {
+    for (let i = 0; i < children.length; i++) {
+      const child = normalizeVNode(children[i]);
+      console.log("child", child);
+      patch(null, child, container, anchor, parentComponent);
+    }
+  };
 
   /****************************处理组件**************************/
 

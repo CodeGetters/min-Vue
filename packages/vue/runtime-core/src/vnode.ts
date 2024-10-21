@@ -115,6 +115,28 @@ function normalizeChildren(vnode, children: unknown): void {
   vnode.shapeFlag |= type;
 }
 
+export const Text: unique symbol = Symbol.for("v-txt");
+export const Comment: unique symbol = Symbol.for("v-cmt");
+export const Static: unique symbol = Symbol.for("v-stc");
+
+/**
+ * 将子节点规范化为虚拟节点
+ * @param {any} child - 待规范化的子节点
+ * @returns {VNode} 规范化后的虚拟节点
+ */
+export function normalizeVNode(child) {
+  if (child == null || typeof child === "boolean") {
+    // 如果子节点为 null、undefined 或布尔值，创建一个注释节点作为占位符
+    return createVNode(Comment);
+  } else if (isVNode(child)) {
+    // 如果子节点已经是虚拟节点，直接返回
+    return child;
+  } else {
+    // 如果子节点是其他类型（如字符串或数字），创建一个文本节点
+    return createVNode(Text, null, String(child));
+  }
+}
+
 export function isVNode(value: any) {
   return value ? value._v_isVnode === true : false;
 }
