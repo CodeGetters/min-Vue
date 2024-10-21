@@ -15,6 +15,16 @@
  *        i.创建组件实例
  *        ii.解析数据到实例对象中
  *        iii.创建一个 effect 让 renderer 执行
+ * 3、元素挂载流程
+ *    a.在 patch 中如果判断节点类型为元素，那么会调用 processElement
+ *        i.processElement 会根据旧节点判断是创建【mountElement】还是更新【patchElement】
+ *        ii.mountElement 会对 props、children 进行处理，如果有子节点还需要调用 mountChildren
+ *        iii.mountChildren 会遍历每一个子节点，同时会对不是 vnode 的子节点调用 normalizeVNode 将其转为 vnode
+ *    b.在 patch 方法中，如果节点类型为元素，那么会判断节点属于什么元素类型（这里以Text为例）
+ *    c.如果节点是文本，调用 processText 处理文本
+ *        i.该方法会判断 n1 是否为 null 以此判断是创建还是更新
+ *        ii.如果 n1 不存在，则使用 hostCreateText 创建文本节点，并将文本节点挂载到容器元素中(hostInsert)
+ *        iii.如果 n1 存在，则调用 hostSetText 更新文本节点
  *
  * ====================================================================
  */
@@ -137,7 +147,6 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const mountChildren = (children, container, anchor, parentComponent) => {
     for (let i = 0; i < children.length; i++) {
       const child = normalizeVNode(children[i]);
-      console.log("child", child);
       patch(null, child, container, anchor, parentComponent);
     }
   };
