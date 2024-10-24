@@ -2,22 +2,53 @@ import { EMPTY_OBJ, hasOwn } from "@mini/shared";
 import { Data } from "./renderer";
 import { warn } from "./warning";
 
+enum AccessTypes {
+  OTHER,
+  SETUP,
+  DATA,
+  PROPS,
+  CONTEXT,
+}
+
 /**
  * 公共实例代理处理器
  * 用于处理组件实例的属性访问和设置
  */
 export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
   get({ _: instance }, key: string) {
-    const { data, props, setupState, ctx } = instance;
+    const { data, props, setupState, accessCache, ctx } = instance;
+    console.log("-----------PublicInstanceProxyHandlers--------", props, key);
+    let normalizedProps;
     // 非$开头的属性，按照优先级查找 setupState、data、props、ctx
     if (key[0] !== "$") {
-      if (hasSetupBinding(setupState, key)) {
+      const n = accessCache![key];
+      // debugger;
+      if (n !== undefined) {
+        switch (n) {
+          case AccessTypes.SETUP:
+            return setupState[key];
+          case AccessTypes.DATA:
+            return data[key];
+          case AccessTypes.CONTEXT:
+            return ctx[key];
+          case AccessTypes.PROPS:
+            return props![key];
+        }
+      } else if (hasSetupBinding(setupState, key)) {
+        accessCache![key] = AccessTypes.SETUP;
         return setupState[key];
       } else if (data !== EMPTY_OBJ && hasOwn(data, key)) {
+        accessCache![key] = AccessTypes.DATA;
         return data[key];
-      } else if (hasOwn(props, key)) {
+        // TODO: bug
+      } else if (
+        (normalizedProps = instance.propsOptions[0]) &&
+        hasOwn(normalizedProps, key)
+      ) {
+        accessCache![key] = AccessTypes.PROPS;
         return props![key];
       } else if (ctx !== EMPTY_OBJ && hasOwn(ctx, key)) {
+        accessCache![key] = AccessTypes.CONTEXT;
         return ctx[key];
       }
     }

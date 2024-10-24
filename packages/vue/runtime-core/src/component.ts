@@ -21,6 +21,7 @@ import { ShapeFlags } from "./shapeFlags";
 import { type Data } from "./renderer";
 import { TrackOpTypes, track } from "@mini/reactivity";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
+import { callWithErrorHandling } from "./errorHanding";
 
 let uid = 0;
 
@@ -39,6 +40,9 @@ export function createComponentInstance(vnode) {
     render: null,
     proxy: null,
     exposed: null,
+
+    accessCache: null!,
+    renderCache: [],
 
     // state
     ctx: EMPTY_OBJ,
@@ -66,6 +70,8 @@ export function createComponentInstance(vnode) {
  * @param vnode
  */
 export function setupComponent(instance, isSSR = false, optimized = false) {
+  console.log("---------setupComponent---------", instance.props);
+  // TODO:错误在这之后---大概是 【initProps】、【initProps】
   const { props, children } = instance.vnode;
   // 根据 props 解析到组件实例上
   // initProps(instance, props, isStateful, isSSR)
@@ -94,7 +100,9 @@ export function isStatefulComponent(instance): number {
  */
 function setupStatefulComponent(instance) {
   const Component = instance.type;
-  // instance.accessCache = Object.create(null);
+  instance.accessCache = Object.create(null);
+  // TODO:错误在这之前
+  console.log("-------setupStatefulComponent--------", instance.props);
 
   // 创建组件实例的代理对象
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers);
@@ -104,6 +112,9 @@ function setupStatefulComponent(instance) {
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null);
     // 调用 setup 函数，传入 props 和 setupContext
+    // const setupResult = callWithErrorHandling(setup, instance, [
+    //   instance.props,
+    // ]);
     const setupResult = setup(instance.props, setupContext);
     // 调用组件的 render 函数，传入代理对象
     Component.render(instance.proxy);
@@ -140,9 +151,11 @@ export function createSetupContext(instance) {
  */
 export function handleSetupResult(instance, setupResult) {
   if (isFunction(setupResult)) {
+    console.log("handleSetupResult isFunction", instance);
     // 如果 setup 返回一个函数，将其作为组件的 render 函数
     instance.render = setupResult;
   } else if (isObject(setupResult)) {
+    console.log("handleSetupResult isObject", instance);
     // 如果 setup 返回一个对象，将其设置为组件的 setupState
     // proxyRefs(setupResult)
     instance.setupState = setupResult;
@@ -163,6 +176,7 @@ export function finishComponentSetup(instance) {
     if (!instance.render && Component.template) {
       // 这里可能需要编译模板
     }
+    console.log("instan.render", instance.render);
     // 将组件的 render 函数赋值给实例，如果没有则使用 NOOP（空操作）
     instance.render = Component.render || NOOP;
   }

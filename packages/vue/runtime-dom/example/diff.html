@@ -12,27 +12,28 @@
 
     <script>
       const { createApp, h, reactive } = libRuntimeDom;
-      // const { createApp } = Vue;
+      // const { createApp ,h,reactive} = Vue;
       const App = {
         setup(props, context) {
-          // const state = reactive({ name: "zhangsan" });
-          // console.log("setup arguments", props, context);
-          // props.name = "lisi";
-          // return () => {
-          //   console.log("setup return a function");
-          // };
-          // console.log("setup return a object")
+          const state = reactive({ name: "zhangsan" });
+          const fn = () => {
+            state.name = "lisi";
+          };
+
           return {
-            name: props,
-            age: 10,
+            state,
+            fn,
           };
         },
         render(proxy) {
-          // console.log("render arguments", proxy.props.name);
-          // console.log("this", this, proxy);
-          // return h("div", { style: { color: "red" } }, "hello");
+          console.log("diff render", proxy.state);
+          // return h(
+          //   "div",
+          //   { style: { color: "red" }, onclick: proxy.fn },
+          //   proxy.state.name
+          // );
           // return h("div", { style: { color: "red" } }, ["hello"]);
-          return h("div", { style: { color: "red" } }, [h("div", {}, "hello")]);
+          // return h("div", { style: { color: "red" } }, [h("div", {}, "hello")]);
         },
       };
       createApp(App).mount("#app");

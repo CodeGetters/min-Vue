@@ -73,6 +73,8 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const patch = (n1, n2, container, anchor = null, parentComponent = null) => {
     if (n1 === n2) return;
 
+    // console.log("patch", n1, n2, container, anchor, parentComponent);
+
     const { shapeFlag, type } = n2;
     switch (type) {
       case Text:
@@ -162,6 +164,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
    */
   const processComponent = (n1, n2, container, anchor) => {
     if (n1 === null) {
+      console.log("------mountComponent--------", n2.props);
       // 如果旧节点不存在，说明是首次渲染，调用mountComponent进行挂载
       mountComponent(n2, container, anchor);
     } else {
@@ -179,6 +182,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const mountComponent = (initialVNode, container, anchor) => {
     const instance = (initialVNode.component =
       createComponentInstance(initialVNode));
+    console.log("----------mountComponent--------", instance.props);
     setupComponent(instance);
 
     // 设置渲染效果，这里会创建一个 effect 让 renderer 执行
@@ -189,6 +193,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const updateComponent = () => {};
 
   const setupRenderEffect = (instance, initialVNode, container) => {
+    // console.log("setupRenderEffect", instance);
     // TODO:
     // 在 effect 中调用 render 以便在 render 中收集依赖
     // 属性改变时，effect 会重新执行
@@ -200,11 +205,15 @@ function baseCreateRenderer(options, createHydrationFns?): any {
         // console.log("渲染节点 vnode", vnode); --> 这里渲染节点 vnode
         // 渲染子树
         patch(null, vnode, container);
+        instance.isMounted = true;
+      } else {
+        console.log("更新操作");
       }
     });
   };
 
   const render = (vnode, container, namespace) => {
+    // console.log("---render---", vnode, container);
     // 第一次渲染
     patch(null, vnode, container);
   };
