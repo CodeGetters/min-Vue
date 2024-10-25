@@ -26,12 +26,12 @@
           };
         },
         render(proxy) {
-          console.log("diff render", proxy.state);
-          // return h(
-          //   "div",
-          //   { style: { color: "red" }, onclick: proxy.fn },
-          //   proxy.state.name
-          // );
+          // console.log("diff render", proxy.state.name);
+          return h(
+            "div",
+            { style: { color: "red" }, onclick: proxy.fn },
+            proxy.state.name
+          );
           // return h("div", { style: { color: "red" } }, ["hello"]);
           // return h("div", { style: { color: "red" } }, [h("div", {}, "hello")]);
         },

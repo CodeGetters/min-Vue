@@ -33,6 +33,7 @@ import { createAppAPI } from "./apiCreateApp";
 import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "./shapeFlags";
 import { normalizeVNode, Text } from "./vnode";
+import { renderComponentRoot } from "./componentRenderUtils";
 
 export type Data = Record<string, unknown>;
 
@@ -73,8 +74,14 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const patch = (n1, n2, container, anchor = null, parentComponent = null) => {
     if (n1 === n2) return;
 
-    // console.log("patch", n1, n2, container, anchor, parentComponent);
-
+    console.log(
+      "==========patch=========",
+      n1,
+      n2,
+      container,
+      anchor,
+      parentComponent
+    );
     const { shapeFlag, type } = n2;
     switch (type) {
       case Text:
@@ -87,7 +94,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
           processElement(n1, n2, container, anchor, parentComponent);
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           // 文本
-          processComponent(n1, n2, container, anchor);
+          processComponent(n1, n2, container, anchor, parentComponent);
         }
     }
   };
@@ -134,6 +141,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
           hostPatchProp(el, "value", null, props.value);
         }
       }
+      console.log("===================mountElement==============", props);
     }
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       hostSetElementText(el, vnode.children as string);
@@ -162,11 +170,11 @@ function baseCreateRenderer(options, createHydrationFns?): any {
    * @param {Element} container - 容器元素
    * @param {Element | null} anchor - 锚点元素
    */
-  const processComponent = (n1, n2, container, anchor) => {
+  const processComponent = (n1, n2, container, anchor, parentComponent) => {
     if (n1 === null) {
       console.log("------mountComponent--------", n2.props);
       // 如果旧节点不存在，说明是首次渲染，调用mountComponent进行挂载
-      mountComponent(n2, container, anchor);
+      mountComponent(n2, container, anchor, parentComponent);
     } else {
       // 如果旧节点存在，说明是更新操作，调用updateComponent进行更新
       updateComponent();
@@ -179,9 +187,11 @@ function baseCreateRenderer(options, createHydrationFns?): any {
    * 2、解析数据到实例对象中
    * 3、创建一个 effect 让 renderer 执行
    */
-  const mountComponent = (initialVNode, container, anchor) => {
-    const instance = (initialVNode.component =
-      createComponentInstance(initialVNode));
+  const mountComponent = (initialVNode, container, anchor, parentComponent) => {
+    const instance = (initialVNode.component = createComponentInstance(
+      initialVNode,
+      parentComponent
+    ));
     console.log("----------mountComponent--------", instance.props);
     setupComponent(instance);
 
@@ -193,18 +203,19 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const updateComponent = () => {};
 
   const setupRenderEffect = (instance, initialVNode, container) => {
-    // console.log("setupRenderEffect", instance);
+    console.log("============setupRenderEffect==========", instance);
     // TODO:
     // 在 effect 中调用 render 以便在 render 中收集依赖
     // 属性改变时，effect 会重新执行
     effect(function componentEffect() {
       // 第一次加载
       if (!instance.isMounted) {
-        const proxy = instance.proxy;
-        const vnode = instance.render.call(proxy, proxy);
+        instance.subTree = renderComponentRoot(instance);
+        // const proxy = instance.proxy;
+        // const vnode = instance.render.call(proxy, proxy);
         // console.log("渲染节点 vnode", vnode); --> 这里渲染节点 vnode
         // 渲染子树
-        patch(null, vnode, container);
+        patch(null, instance.subTree, container);
         instance.isMounted = true;
       } else {
         console.log("更新操作");

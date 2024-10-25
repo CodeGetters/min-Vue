@@ -27,6 +27,12 @@ type EventValue = Function | Function[];
 const veiKey: unique symbol = Symbol("_vei");
 
 export function patchEvent(el: Element, rawName, nextValue): void {
+  console.log(
+    "===================patchEvent==============",
+    el,
+    rawName,
+    nextValue
+  );
   // 对函数进行缓存
   const invokers = el[veiKey] || (el[veiKey] = {});
   const existingInvoker = invokers[rawName];

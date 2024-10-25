@@ -23,6 +23,7 @@ import { patchDOMProps } from "./modules/props";
 import { isOn } from "@mini/shared";
 
 export const patchProp = (el, key, prevKey, nextValue) => {
+  console.log("===================patchProp==============");
   switch (key) {
     case "class":
       patchClass(el, nextValue);
@@ -31,6 +32,8 @@ export const patchProp = (el, key, prevKey, nextValue) => {
       patchStyle(el, prevKey, nextValue);
       break;
     default:
+      console.log("===================patchProp==============", key);
+      console.log("===================patchProp==============", isOn(key));
       if (isOn(key)) {
         patchEvent(el, key, nextValue);
       } else {

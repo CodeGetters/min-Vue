@@ -22,15 +22,23 @@ import { type Data } from "./renderer";
 import { TrackOpTypes, track } from "@mini/reactivity";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { callWithErrorHandling } from "./errorHanding";
+import { initProps, normalizePropsOptions } from "./componentProps";
+import { createAppContext } from "./apiCreateApp";
 
 let uid = 0;
+
+const emptyAppContext = createAppContext();
 
 /**
  * 创建组件实例
  * @param vnode 虚拟节点
  * @returns 返回创建的组件实例
  */
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
+  console.log("==========createComponentInstance=======", vnode.type.props);
+  // createAppContext
+  const appContext =
+    (parent ? parent.appContext : vnode.appContext) || emptyAppContext;
   const type = vnode.type;
   // 创建组件实例对象
   const instance = {
@@ -40,9 +48,19 @@ export function createComponentInstance(vnode) {
     render: null,
     proxy: null,
     exposed: null,
+    withProxy: null,
 
     accessCache: null!,
     renderCache: [],
+
+    // resolved props and emits options
+    propsOptions: normalizePropsOptions(type, appContext),
+
+    // props default value
+    propsDefaults: EMPTY_OBJ,
+
+    // inheritAttrs
+    inheritAttrs: type.inheritAttrs,
 
     // state
     ctx: EMPTY_OBJ,
@@ -73,12 +91,11 @@ export function setupComponent(instance, isSSR = false, optimized = false) {
   console.log("---------setupComponent---------", instance.props);
   // TODO:错误在这之后---大概是 【initProps】、【initProps】
   const { props, children } = instance.vnode;
-  // 根据 props 解析到组件实例上
-  // initProps(instance, props, isStateful, isSSR)
-  // initSlots(instance, children, optimized)
-  instance.props = props;
-  instance.children = children;
   const isStateful = isStatefulComponent(instance);
+  // 根据 props 解析到组件实例上
+  initProps(instance, props, isStateful);
+  // initSlots(instance, children, optimized)
+  instance.children = children;
   const setupResult = isStateful ? setupStatefulComponent(instance) : undefined;
 
   return setupResult;
@@ -101,13 +118,11 @@ export function isStatefulComponent(instance): number {
 function setupStatefulComponent(instance) {
   const Component = instance.type;
   instance.accessCache = Object.create(null);
-  // TODO:错误在这之前
-  console.log("-------setupStatefulComponent--------", instance.props);
+  console.log("-------setupStatefulComponent--------", instance);
 
   // 创建组件实例的代理对象
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers);
   const { setup } = Component;
-
   if (setup) {
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null);
@@ -115,9 +130,12 @@ function setupStatefulComponent(instance) {
     // const setupResult = callWithErrorHandling(setup, instance, [
     //   instance.props,
     // ]);
+    setCurrentInstance(instance);
     const setupResult = setup(instance.props, setupContext);
+    setCurrentInstance(null);
     // 调用组件的 render 函数，传入代理对象
-    Component.render(instance.proxy);
+    // Component.render(instance.proxy);
+
     // 处理对于 setup 函数的返回值的两种情况：1、返回一个对象，2、返回一个函数
     handleSetupResult(instance, setupResult);
   } else {
@@ -125,6 +143,14 @@ function setupStatefulComponent(instance) {
     finishComponentSetup(instance);
   }
 }
+
+export let currentInstance = null;
+
+export const getCurrentInstance = () => currentInstance;
+
+export const setCurrentInstance = (instance) => {
+  currentInstance = instance;
+};
 
 /**
  * 创建组件的 setup 上下文
