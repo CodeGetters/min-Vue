@@ -15,7 +15,8 @@
  *
  * ====================================================================
  */
-import { hyphenate } from "@mini/shared";
+import { hyphenate, isArray } from "@mini/shared";
+import { ErrorCodes, callWithAsyncErrorHandling } from "../errorHandling";
 
 interface Invoker extends EventListener {
   value: EventValue;
@@ -27,12 +28,6 @@ type EventValue = Function | Function[];
 const veiKey: unique symbol = Symbol("_vei");
 
 export function patchEvent(el: Element, rawName, nextValue): void {
-  console.log(
-    "===================patchEvent==============",
-    el,
-    rawName,
-    nextValue
-  );
   // 对函数进行缓存
   const invokers = el[veiKey] || (el[veiKey] = {});
   const existingInvoker = invokers[rawName];
@@ -42,6 +37,7 @@ export function patchEvent(el: Element, rawName, nextValue): void {
     existingInvoker.value = nextValue;
   } else {
     const [name, options] = parseName(rawName);
+    console.log("============patchEvent=========", name, options);
     // 如果 nextValue 不为空，那么添加事件
     if (nextValue) {
       const invoker = (invokers[rawName] = createInvoker(
@@ -106,11 +102,16 @@ function createInvoker(initialValue: EventValue, instance?) {
     // 这里给每一个事件添加一个时间戳，以避免不一致的事件时间戳导致的补丁操作
     if (!e._vts) {
       e._vts = Date.now();
-    } else if (e._vts <= invoker.attached) {
+    } else if (e._vts < invoker.attached) {
       // 如果事件的时间戳早于或等于调用器的附加时间，则忽略该事件
       return;
     }
-    // TODO：ErrorHandler
+    callWithAsyncErrorHandling(
+      patchStopImmediatePropagation(e, invoker.value),
+      instance,
+      ErrorCodes.NATIVE_EVENT_HANDLER,
+      [e]
+    );
   };
   invoker.value = initialValue;
   // 设置调用器的附加时间为当前时间
@@ -148,4 +149,32 @@ export function removeEventListener(
   options?: EventListenerOptions
 ) {
   el.removeEventListener(event, handler, options);
+}
+
+/**
+ * 修补事件的 stopImmediatePropagation 方法
+ * @param e 事件对象
+ * @param value 事件处理函数或函数数组
+ * @returns 修补后的事件处理函数或函数数组
+ */
+function patchStopImmediatePropagation(
+  e: Event,
+  value: EventValue
+): EventValue {
+  if (isArray(value)) {
+    // 保存原始的 stopImmediatePropagation 方法
+    const originalStop = e.stopImmediatePropagation;
+    // 重写 stopImmediatePropagation 方法
+    e.stopImmediatePropagation = () => {
+      originalStop.call(e);
+      (e as any)._stopped = true;
+    };
+    // 对数组中的每个函数进行包装，检查事件是否已停止
+    return (value as Function[]).map(
+      (fn) => (e: Event) => !(e as any)._stopped && fn(e)
+    );
+  } else {
+    // 如果 value 不是数组，直接返回
+    return value;
+  }
 }

@@ -24,7 +24,7 @@ export function patchStyle(el: Element, prev, next) {
     if (prev) {
       for (const key in prev) {
         if (next[key] == null) {
-          delete style[key];
+          style[key] = "";
         }
       }
     }

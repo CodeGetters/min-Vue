@@ -25,8 +25,13 @@
  *        i.该方法会判断 n1 是否为 null 以此判断是创建还是更新
  *        ii.如果 n1 不存在，则使用 hostCreateText 创建文本节点，并将文本节点挂载到容器元素中(hostInsert)
  *        iii.如果 n1 存在，则调用 hostSetText 更新文本节点
- * 4、元素更新流程
- *    a.在 patch 方法中，如果节点类型为元素，那么会判断节点属于什么元素类型（这里以Text为例）
+ * 4、同级元素更新流程（判断是否是同一个元素）
+ *    a.如果不是同一个元素，那么先调用 unmount 方法卸载旧节点，然后调用 mountElement 创建新节点
+ *    b.如果节点是同一个元素，那么会走 processElement 进行处理元素，接着由于 n1 存在，那么会调用 patchElement 更新元素
+ *        i.patchElement 获取新旧节点的 props 调用 patchProps 更新属性
+ *            I.patchProps 会遍历旧节点 props，如果存在旧节点不在新节点中，则调用 hostPatchProp 更新属性
+ *            II.patchProps 会遍历新节点 props，如果存在新节点不在旧节点中，则调用 hostPatchProp 更新属性
+ *        ii.patchElement 获取新旧节点的 children 调用 patchChildren 更新子节点
  *
  * ====================================================================
  */
@@ -36,6 +41,7 @@ import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "./shapeFlags";
 import { Comment, isSameVNodeType, normalizeVNode, Text } from "./vnode";
 import { renderComponentRoot } from "./componentRenderUtils";
+import { EMPTY_OBJ } from "@mini/shared";
 
 export type Data = Record<string, unknown>;
 
@@ -84,10 +90,10 @@ function baseCreateRenderer(options, createHydrationFns?): any {
       anchor,
       parentComponent
     );
-    // update diff 1、是否是同一个元素
+    // 判断是否不是同一个元素
     if (n1 && !isSameVNodeType(n1, n2)) {
       unmount(n1, parentComponent);
-      n1 = null;
+      n1 = null; // 组件重新加载
     }
 
     const { shapeFlag, type } = n2;
@@ -143,7 +149,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   /****************************处理元素**************************/
 
   const processElement = (n1, n2, container, anchor, parentComponent) => {
-    console.log("============processElement==========", n1, n2);
+    console.log("============processElement==========", n1, n2, container);
     if (n1 == null) {
       mountElement(n2, container, anchor, parentComponent);
     } else {
@@ -178,12 +184,57 @@ function baseCreateRenderer(options, createHydrationFns?): any {
     hostInsert(el, container, anchor);
   };
 
-  const patchElement = (n1, n2, parentComponent) => {};
-
   const mountChildren = (children, container, anchor, parentComponent) => {
     for (let i = 0; i < children.length; i++) {
       const child = normalizeVNode(children[i]);
       patch(null, child, container, anchor, parentComponent);
+    }
+  };
+
+  const patchElement = (n1, n2, parentComponent) => {
+    console.log("==========patchElement=========");
+    let el = (n2.el = n1.el!);
+    const oldValue = n1.props || {};
+    const newValue = n2.props || {};
+    patchProps(el, oldValue, newValue, parentComponent);
+    patchChildren(n1, n2, el, parentComponent, null);
+  };
+
+  const patchProps = (el, oldProps, newProps, parentComponent) => {
+    console.log("==========patchProps=========", el, parentComponent);
+    if (oldProps !== newProps) {
+      if (oldProps !== EMPTY_OBJ) {
+        for (const key in oldProps) {
+          if (!(key in newProps)) {
+            hostPatchProp(el, key, oldProps[key], null);
+          }
+        }
+      }
+      for (const key in newProps) {
+        const next = newProps[key];
+        const prev = oldProps[key];
+        console.log("==========newProps=========", prev, next);
+        if (next !== prev && key !== "value") {
+          hostPatchProp(el, key, prev, next);
+        }
+      }
+      if ("value" in newProps) {
+        hostPatchProp(el, "value", oldProps.value, newProps.value);
+      }
+    }
+  };
+
+  const patchChildren = (n1, n2, container, parentComponent, anchor) => {
+    console.log("==========patchChildren=========");
+    const c1 = n1 && n1.children;
+    const c2 = n2.children;
+    const prevShapeFlag = n1 ? n1.shapeFlag : 0;
+
+    // child 有三种可能性：text、array、no children
+
+    if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      console.log("==========patchChildren=========", c2);
+      hostSetElementText(container, c2);
     }
   };
 
@@ -234,7 +285,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
     effect(function componentEffect() {
       // 第一次加载
       if (!instance.isMounted) {
-        console.log("==========第一次加载==========", instance);
+        console.log("==========首次加载==========", instance);
         const subTree = (instance.subTree = renderComponentRoot(instance));
         // const proxy = instance.proxy;
         // const vnode = instance.render.call(proxy, proxy);
@@ -248,12 +299,13 @@ function baseCreateRenderer(options, createHydrationFns?): any {
         // 比对节点 diff
         const nextTree = renderComponentRoot(instance);
         const prevTree = instance.subTree;
+        instance.subTree = nextTree;
         patch(prevTree, nextTree, container);
       }
     });
   };
   const unmount = (vnode, parentComponent) => {
-    // hostRemove(vnode.el);
+    hostRemove(vnode.el);
   };
 
   const render = (vnode, container, namespace) => {

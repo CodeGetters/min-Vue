@@ -46,7 +46,9 @@ export const nodeOps = {
   // 节点文本
   createText: (text) => doc.createTextNode(text),
 
-  setText: (node, text) => (node.nodeValue = text),
+  setText: (node, text) => {
+    node.nodeValue = text;
+  },
 
   createComment: (text) => doc.createComment(text),
 

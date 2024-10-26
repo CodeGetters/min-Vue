@@ -20,9 +20,9 @@
             state.name = "lisi";
           };
 
-          setTimeout(() => {
-            state.isFlag = true;
-          }, 1500);
+          // setTimeout(() => {
+          //   state.isFlag = true;
+          // }, 1500);
 
           return {
             state,
@@ -34,13 +34,16 @@
             return h(
               "div",
               { style: { color: "red" }, onClick: proxy.fn },
-              proxy.state.name
+              "proxy"
             );
           } else {
             return h(
               "div",
-              { style: { color: "blue" }, onClick: proxy.fn },
-              "proxy.state.name"
+              {
+                style: { color: "blue", background: "pink" },
+                onClick: proxy.fn,
+              },
+              proxy.state.name
             );
           }
         },

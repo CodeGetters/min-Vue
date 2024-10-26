@@ -22,29 +22,23 @@ import { patchEvent } from "./modules/events";
 import { patchDOMProp } from "./modules/props";
 import { isOn, isString } from "@mini/shared";
 
-export const patchProp = (el, key, prevKey, nextValue) => {
-  switch (key) {
-    case "class":
-      patchClass(el, nextValue);
-      break;
-    case "style":
-      patchStyle(el, prevKey, nextValue);
-      break;
-    case isOn(key):
-      patchEvent(el, key, nextValue);
-      break;
-    default:
-      if (
-        key[0] === "."
-          ? ((key = key.slice(1)), true)
-          : key[0] === "^"
-          ? ((key = key.slice(1)), false)
-          : shouldSetAsProp(el, key, nextValue)
-      ) {
-        patchDOMProp(el, key, nextValue);
-      } else {
-        patchAttr(el, key, nextValue);
-      }
+export const patchProp = (el, key, prevValue, nextValue) => {
+  if (key === "class") {
+    patchClass(el, nextValue);
+  } else if (key === "style") {
+    patchStyle(el, prevValue, nextValue);
+  } else if (isOn(key)) {
+    patchEvent(el, key, nextValue);
+  } else if (
+    key[0] === "."
+      ? ((key = key.slice(1)), true)
+      : key[0] === "^"
+      ? ((key = key.slice(1)), false)
+      : shouldSetAsProp(el, key, nextValue)
+  ) {
+    patchDOMProp(el, key, nextValue);
+  } else {
+    patchAttr(el, key, nextValue);
   }
 };
 
