@@ -6,6 +6,7 @@ import {
 } from "./baseHandler";
 
 import { isObject } from "@mini/shared";
+import { ReactiveFlags } from "./constant";
 
 // WeakMap 只能用对象作为 key，并且会自动进行垃圾回收，避免造成内存泄漏
 export const reactiveMap = new WeakMap();
@@ -51,4 +52,12 @@ function createReactiveObject(target, isReadonly, baseHandlers) {
   proxyMap.set(target, proxy);
 
   return proxy;
+}
+
+export function isReactive(value: unknown): boolean {
+  return !!(value && value[ReactiveFlags.IS_REACTIVE]);
+}
+
+export function isReadonly(value: unknown): boolean {
+  return !!(value && value[ReactiveFlags.IS_READONLY]);
 }

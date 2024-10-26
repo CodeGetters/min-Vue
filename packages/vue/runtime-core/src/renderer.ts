@@ -28,7 +28,7 @@
  *
  * ====================================================================
  */
-import { effect } from "@mini/reactivity";
+import { effect } from "@mini/libreactive";
 import { createAppAPI } from "./apiCreateApp";
 import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "./shapeFlags";
@@ -120,6 +120,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   /****************************处理元素**************************/
 
   const processElement = (n1, n2, container, anchor, parentComponent) => {
+    console.log("============processElement==========", n1, n2);
     if (n1 == null) {
       mountElement(n2, container, anchor, parentComponent);
     } else {
@@ -128,9 +129,19 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   };
 
   const mountElement = (vnode, container, anchor, parentComponent) => {
+    console.log("===================mountElement==============", vnode);
     // 创建元素
-    let el = (vnode.el = hostCreateElement(vnode.type));
+    let el;
     const { props, shapeFlag } = vnode;
+
+    el = vnode.el = hostCreateElement(vnode.type);
+
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      hostSetElementText(el, vnode.children as string);
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      mountChildren(vnode.children, el, null, parentComponent);
+    }
+
     if (props) {
       // props 存在，遍历 props 并设置属性
       for (const key in props) {
@@ -141,15 +152,9 @@ function baseCreateRenderer(options, createHydrationFns?): any {
           hostPatchProp(el, "value", null, props.value);
         }
       }
-      console.log("===================mountElement==============", props);
-    }
-    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
-      hostSetElementText(el, vnode.children as string);
-    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(vnode.children, el, null, parentComponent);
     }
     // 插入到容器中
-    hostInsert(el, container);
+    hostInsert(el, container, anchor);
   };
 
   const patchElement = (n1, n2, parentComponent) => {};
@@ -210,12 +215,12 @@ function baseCreateRenderer(options, createHydrationFns?): any {
     effect(function componentEffect() {
       // 第一次加载
       if (!instance.isMounted) {
-        instance.subTree = renderComponentRoot(instance);
+        const subTree = (instance.subTree = renderComponentRoot(instance));
         // const proxy = instance.proxy;
         // const vnode = instance.render.call(proxy, proxy);
         // console.log("渲染节点 vnode", vnode); --> 这里渲染节点 vnode
         // 渲染子树
-        patch(null, instance.subTree, container);
+        patch(null, subTree, container);
         instance.isMounted = true;
       } else {
         console.log("更新操作");

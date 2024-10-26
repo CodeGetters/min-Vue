@@ -19,11 +19,11 @@ import { patchClass } from "./modules/class";
 import { patchStyle } from "./modules/style";
 import { patchAttr } from "./modules/attrs";
 import { patchEvent } from "./modules/events";
-import { patchDOMProps } from "./modules/props";
-import { isOn } from "@mini/shared";
+import { patchDOMProp } from "./modules/props";
+import { isOn, isString } from "@mini/shared";
 
 export const patchProp = (el, key, prevKey, nextValue) => {
-  console.log("===================patchProp==============");
+  console.log("===================patchProp==============", key);
   switch (key) {
     case "class":
       patchClass(el, nextValue);
@@ -31,13 +31,34 @@ export const patchProp = (el, key, prevKey, nextValue) => {
     case "style":
       patchStyle(el, prevKey, nextValue);
       break;
+    case isOn(key):
+      patchEvent(el, key, nextValue);
+      break;
     default:
-      console.log("===================patchProp==============", key);
-      console.log("===================patchProp==============", isOn(key));
-      if (isOn(key)) {
-        patchEvent(el, key, nextValue);
+      if (
+        key[0] === "."
+          ? ((key = key.slice(1)), true)
+          : key[0] === "^"
+          ? ((key = key.slice(1)), false)
+          : shouldSetAsProp(el, key, nextValue)
+      ) {
+        patchDOMProp(el, key, nextValue);
       } else {
         patchAttr(el, key, nextValue);
       }
   }
 };
+
+function shouldSetAsProp(el, key, value) {
+  if (isNativeOn(key) && isString(value)) {
+    return false;
+  }
+  return key in el;
+}
+
+const isNativeOn = (key: string) =>
+  key.charCodeAt(0) === 111 /* o */ &&
+  key.charCodeAt(1) === 110 /* n */ &&
+  // lowercase letter
+  key.charCodeAt(2) > 96 &&
+  key.charCodeAt(2) < 123;

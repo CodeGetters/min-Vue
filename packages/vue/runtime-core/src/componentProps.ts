@@ -1,4 +1,4 @@
-import { shallowReactive } from "@mini/reactivity";
+import { shallowReactive } from "@mini/libreactive";
 import { type Data } from "./renderer";
 
 export function initProps(instance, rawProps: Data | null, isStateful: number) {

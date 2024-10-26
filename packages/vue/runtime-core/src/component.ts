@@ -19,7 +19,7 @@
 import { EMPTY_OBJ, NOOP, isFunction, isObject } from "@mini/shared";
 import { ShapeFlags } from "./shapeFlags";
 import { type Data } from "./renderer";
-import { TrackOpTypes, track } from "@mini/reactivity";
+import { TrackOpTypes, track, proxyRefs } from "@mini/libreactive";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { callWithErrorHandling } from "./errorHanding";
 import { initProps, normalizePropsOptions } from "./componentProps";
@@ -177,14 +177,11 @@ export function createSetupContext(instance) {
  */
 export function handleSetupResult(instance, setupResult) {
   if (isFunction(setupResult)) {
-    console.log("handleSetupResult isFunction", instance);
     // 如果 setup 返回一个函数，将其作为组件的 render 函数
     instance.render = setupResult;
   } else if (isObject(setupResult)) {
-    console.log("handleSetupResult isObject", instance);
     // 如果 setup 返回一个对象，将其设置为组件的 setupState
-    // proxyRefs(setupResult)
-    instance.setupState = setupResult;
+    instance.setupState = proxyRefs(setupResult);
   }
   // 完成组件的设置
   finishComponentSetup(instance);
@@ -202,7 +199,6 @@ export function finishComponentSetup(instance) {
     if (!instance.render && Component.template) {
       // 这里可能需要编译模板
     }
-    console.log("instan.render", instance.render);
     // 将组件的 render 函数赋值给实例，如果没有则使用 NOOP（空操作）
     instance.render = Component.render || NOOP;
   }

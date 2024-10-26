@@ -17,7 +17,11 @@ enum AccessTypes {
 export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
   get({ _: instance }, key: string) {
     const { data, props, setupState, accessCache, ctx } = instance;
-    console.log("-----------PublicInstanceProxyHandlers--------", props, key);
+    console.log(
+      "-----------PublicInstanceProxyHandlers get--------",
+      props,
+      key
+    );
     let normalizedProps;
     // 非$开头的属性，按照优先级查找 setupState、data、props、ctx
     if (key[0] !== "$") {
@@ -55,6 +59,10 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
   },
   set({ _: instance }, key: string, value: any) {
     const { data, setupState, ctx } = instance;
+    console.log(
+      "-----------PublicInstanceProxyHandlers set--------",
+      setupState
+    );
     // 按照优先级设置属性值 setupState、data、ctx（props 是只读的，不能进行修改）
     if (hasSetupBinding(setupState, key)) {
       setupState[key] = value;

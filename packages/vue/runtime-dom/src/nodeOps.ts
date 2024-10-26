@@ -39,7 +39,9 @@ export const nodeOps = {
 
   querySelector: (selector) => doc.querySelector(selector),
 
-  setElementText: (el, text) => (el.textContent = text),
+  setElementText: (el, text) => {
+    el.textContent = text;
+  },
 
   // 节点文本
   createText: (text) => doc.createTextNode(text),

@@ -26,7 +26,7 @@
           };
         },
         render(proxy) {
-          // console.log("diff render", proxy.state.name);
+          console.log("diff render", proxy.fn);
           return h(
             "div",
             { style: { color: "red" }, onclick: proxy.fn },

@@ -13,6 +13,7 @@
 import { hasChanged } from "@mini/shared";
 import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from "./constant";
 import { track, trigger } from "./deps";
+import { isReactive } from "./reactive";
 
 export function ref(value?: unknown) {
   return createRef(value, false);
@@ -23,12 +24,18 @@ export function shallowRef(value?: unknown) {
 }
 
 function createRef(rawValue: unknown, isShallow: boolean) {
+  if (isRef(rawValue)) {
+    return rawValue;
+  }
   return new RefImpl(rawValue, isShallow);
 }
 
 class RefImpl<T = any> {
   _value: T;
-  private _rawValue;
+  private _rawValue: T;
+  public readonly [ReactiveFlags.IS_REF] = true;
+  public readonly [ReactiveFlags.IS_SHALLOW]: boolean = false;
+
   constructor(value: T, isShallow: boolean) {
     this._value = value;
     this[ReactiveFlags.IS_SHALLOW] = isShallow;
@@ -45,4 +52,34 @@ class RefImpl<T = any> {
       trigger(this, TriggerOpTypes.SET, "value", newValue);
     }
   }
+}
+
+export function proxyRefs(objectWithRefs) {
+  return isReactive(objectWithRefs)
+    ? objectWithRefs
+    : new Proxy(objectWithRefs, shallowUnwrapHandlers);
+}
+
+export const shallowUnwrapHandlers: ProxyHandler<any> = {
+  get: (target, key, receiver) =>
+    key === ReactiveFlags.RAW
+      ? target
+      : unref(Reflect.get(target, key, receiver)),
+  set: (target, key, value, receiver) => {
+    const oldValue = target[key];
+    if (isRef(oldValue) && !isRef(value)) {
+      oldValue.value = value;
+      return true;
+    } else {
+      return Reflect.set(target, key, value, receiver);
+    }
+  },
+};
+
+export function unref(ref) {
+  return isRef(ref) ? ref.value : ref;
+}
+
+export function isRef(r) {
+  return r ? r[ReactiveFlags.IS_REF] === true : false;
 }

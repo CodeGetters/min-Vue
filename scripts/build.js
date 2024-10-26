@@ -93,7 +93,11 @@ async function build(target) {
 
   // 递归删除 dist
   if (existsSync(`${pkgDir}/dist`)) {
-    fs.rmSync(`${pkgDir}/dist`, { recursive: true });
+    try {
+      fs.rmSync(`${pkgDir}/dist`, { recursive: true, force: true });
+    } catch (error) {
+      console.error(`Failed to delete ${pkgDir}/dist: ${error}`);
+    }
   }
 
   const env =

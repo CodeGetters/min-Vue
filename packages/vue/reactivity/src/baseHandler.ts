@@ -27,7 +27,7 @@ import {
 import { reactive, readonly } from "./reactive";
 import { warn } from "./warning";
 import { track, trigger } from "./deps";
-import { TriggerOpTypes } from "./constant";
+import { ReactiveFlags, TriggerOpTypes } from "./constant";
 
 class BaseReactiveHandler {
   constructor(
@@ -35,9 +35,20 @@ class BaseReactiveHandler {
     protected readonly _isShallow = false
   ) {}
   get(target, key: string | symbol, receiver: object): any {
-    const res = Reflect.get(target, key, receiver); // target[key]
     const isReadonly = this._isReadonly,
       isShallow = this._isShallow;
+
+    switch (key) {
+      case ReactiveFlags.IS_REACTIVE:
+        return !isReadonly;
+      case ReactiveFlags.IS_READONLY:
+        return isReadonly;
+      case ReactiveFlags.IS_SHALLOW:
+        return isShallow;
+      // case ReactiveFlags.RAW:
+    }
+
+    const res = Reflect.get(target, key, receiver); // target[key]
 
     if (!isReadonly) {
       track(target, TriggerOpTypes.SET, key);

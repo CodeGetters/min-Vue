@@ -7,7 +7,7 @@ export {
 
 export { effect } from "./effect";
 
-export { ref, shallowRef } from "./ref";
+export { ref, shallowRef, proxyRefs, unref } from "./ref";
 
 export { track } from "./deps";
 
