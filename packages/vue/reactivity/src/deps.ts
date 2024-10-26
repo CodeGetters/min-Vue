@@ -22,7 +22,7 @@ const targetMap = new WeakMap();
  * @returns
  */
 export function track(target, type, key) {
-  console.log("=======track=========", target, type, key, activeEffect); // 执行 get
+  // console.log("=======track=========", target, type, key, activeEffect); // 执行 get
   if (activeEffect === undefined) return;
   let depMap = targetMap.get(target);
   if (!depMap) {

@@ -140,3 +140,7 @@ export function normalizeVNode(child) {
 export function isVNode(value: any) {
   return value ? value._v_isVnode === true : false;
 }
+
+export function isSameVNodeType(n1, n2): boolean {
+  return n1.type === n2.type && n1.key === n2.key;
+}

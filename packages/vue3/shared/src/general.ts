@@ -167,3 +167,39 @@ export const camelize = cacheStringFunction((str) => {
    */
   return str.replace(camelizeRE, (_, c) => (c ? c.toUpperCase() : ""));
 });
+
+/**
+ * 将字符串的首字母大写（+ 缓存）
+ *
+ * @template T 继承自字符串类型
+ * @param {T} str 要转换的字符串
+ * @returns {Capitalize<T>} 首字母大写后的字符串
+ */
+export const capitalize: <T extends string>(str: T) => Capitalize<T> =
+  cacheStringFunction(<T extends string>(str: T) => {
+    // 将字符串的第一个字符转为大写，然后与剩余部分拼接
+    return (str.charAt(0).toUpperCase() + str.slice(1)) as Capitalize<T>;
+  });
+
+/**
+ * 将字符串转换为事件处理函数的键名（+ 缓存）
+ *
+ * @template T 继承自字符串类型
+ * @param {T} str 要转换的字符串
+ * @returns {T extends "" ? "" : `on${Capitalize<T>}`} 转换后的事件处理函数键名
+ *
+ * 示例：
+ * - 输入 "click" 输出 "onClick"
+ * - 输入 "mousedown" 输出 "onMousedown"
+ * - 输入 "" 输出 ""
+ */
+export const toHandlerKey: <T extends string>(
+  str: T
+) => T extends "" ? "" : `on${Capitalize<T>}` = cacheStringFunction(
+  <T extends string>(str: T) => {
+    // 如果str不为空，则在首字母大写后加上"on"前缀；否则返回空字符串
+    const s = str ? `on${capitalize(str)}` : ``;
+    // 使用类型断言确保返回类型符合函数签名
+    return s as T extends "" ? "" : `on${Capitalize<T>}`;
+  }
+);

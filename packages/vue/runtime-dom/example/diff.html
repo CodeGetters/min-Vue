@@ -15,10 +15,14 @@
       // const { createApp ,h,reactive} = Vue;
       const App = {
         setup(props, context) {
-          const state = reactive({ name: "zhangsan" });
+          const state = reactive({ name: "zhangsan", isFlag: false });
           const fn = () => {
             state.name = "lisi";
           };
+
+          setTimeout(() => {
+            state.isFlag = true;
+          }, 2000);
 
           return {
             state,
@@ -26,14 +30,13 @@
           };
         },
         render(proxy) {
-          console.log("diff render", proxy.fn);
-          return h(
-            "div",
-            { style: { color: "red" }, onclick: proxy.fn },
-            proxy.state.name
-          );
-          // return h("div", { style: { color: "red" } }, ["hello"]);
-          // return h("div", { style: { color: "red" } }, [h("div", {}, "hello")]);
+          if (proxy.state.isFlag) {
+            return h(
+              "div",
+              { style: { color: "red" }, onClick: proxy.fn },
+              proxy.state.name
+            );
+          }
         },
       };
       createApp(App).mount("#app");

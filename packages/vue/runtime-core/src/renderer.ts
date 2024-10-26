@@ -25,6 +25,8 @@
  *        i.该方法会判断 n1 是否为 null 以此判断是创建还是更新
  *        ii.如果 n1 不存在，则使用 hostCreateText 创建文本节点，并将文本节点挂载到容器元素中(hostInsert)
  *        iii.如果 n1 存在，则调用 hostSetText 更新文本节点
+ * 4、元素更新流程
+ *    a.在 patch 方法中，如果节点类型为元素，那么会判断节点属于什么元素类型（这里以Text为例）
  *
  * ====================================================================
  */
@@ -32,7 +34,7 @@ import { effect } from "@mini/libreactive";
 import { createAppAPI } from "./apiCreateApp";
 import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "./shapeFlags";
-import { normalizeVNode, Text } from "./vnode";
+import { Comment, isSameVNodeType, normalizeVNode, Text } from "./vnode";
 import { renderComponentRoot } from "./componentRenderUtils";
 
 export type Data = Record<string, unknown>;
@@ -82,11 +84,20 @@ function baseCreateRenderer(options, createHydrationFns?): any {
       anchor,
       parentComponent
     );
+    // update diff 1、是否是同一个元素
+    if (n1 && !isSameVNodeType(n1, n2)) {
+      unmount(n1, parentComponent);
+      n1 = null;
+    }
+
     const { shapeFlag, type } = n2;
     switch (type) {
       case Text:
         // 文本节点
         processText(n1, n2, container, anchor);
+        break;
+      case Comment:
+        processCommentNode(n1, n2, container, anchor);
         break;
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
@@ -96,6 +107,18 @@ function baseCreateRenderer(options, createHydrationFns?): any {
           // 文本
           processComponent(n1, n2, container, anchor, parentComponent);
         }
+    }
+  };
+
+  const processCommentNode = (n1, n2, container, anchor) => {
+    if (n1 === null) {
+      hostInsert(
+        (n2.el = hostCreateComment((n2.children as string) || "")),
+        container,
+        anchor
+      );
+    } else {
+      n2.el = n1.el;
     }
   };
 
@@ -131,11 +154,9 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const mountElement = (vnode, container, anchor, parentComponent) => {
     console.log("===================mountElement==============", vnode);
     // 创建元素
-    let el;
     const { props, shapeFlag } = vnode;
-
-    el = vnode.el = hostCreateElement(vnode.type);
-
+    let el;
+    el = vnode.el = hostCreateElement(vnode.type as string);
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       hostSetElementText(el, vnode.children as string);
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
@@ -177,7 +198,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
    */
   const processComponent = (n1, n2, container, anchor, parentComponent) => {
     if (n1 === null) {
-      console.log("------mountComponent--------", n2.props);
+      console.log("----------processComponent--------", n2);
       // 如果旧节点不存在，说明是首次渲染，调用mountComponent进行挂载
       mountComponent(n2, container, anchor, parentComponent);
     } else {
@@ -197,7 +218,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
       initialVNode,
       parentComponent
     ));
-    console.log("----------mountComponent--------", instance.props);
+    console.log("----------mountComponent--------", initialVNode);
     setupComponent(instance);
 
     // 设置渲染效果，这里会创建一个 effect 让 renderer 执行
@@ -208,30 +229,37 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const updateComponent = () => {};
 
   const setupRenderEffect = (instance, initialVNode, container) => {
-    console.log("============setupRenderEffect==========", instance);
-    // TODO:
     // 在 effect 中调用 render 以便在 render 中收集依赖
     // 属性改变时，effect 会重新执行
     effect(function componentEffect() {
       // 第一次加载
       if (!instance.isMounted) {
+        console.log("==========第一次加载==========", instance);
         const subTree = (instance.subTree = renderComponentRoot(instance));
         // const proxy = instance.proxy;
         // const vnode = instance.render.call(proxy, proxy);
         // console.log("渲染节点 vnode", vnode); --> 这里渲染节点 vnode
         // 渲染子树
         patch(null, subTree, container);
+        initialVNode.el = subTree.el;
         instance.isMounted = true;
       } else {
-        console.log("更新操作");
+        console.log("==========触发更新操作==========");
+        // 比对节点 diff
+        const nextTree = renderComponentRoot(instance);
+        const prevTree = instance.subTree;
+        patch(prevTree, nextTree, container);
       }
     });
   };
+  const unmount = (vnode, parentComponent) => {
+    // hostRemove(vnode.el);
+  };
 
   const render = (vnode, container, namespace) => {
-    // console.log("---render---", vnode, container);
-    // 第一次渲染
-    patch(null, vnode, container);
+    // 进入渲染
+    patch(container.vnode || null, vnode, container);
+    container._vnode = vnode;
   };
 
   return {

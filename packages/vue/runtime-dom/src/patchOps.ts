@@ -23,7 +23,6 @@ import { patchDOMProp } from "./modules/props";
 import { isOn, isString } from "@mini/shared";
 
 export const patchProp = (el, key, prevKey, nextValue) => {
-  console.log("===================patchProp==============", key);
   switch (key) {
     case "class":
       patchClass(el, nextValue);

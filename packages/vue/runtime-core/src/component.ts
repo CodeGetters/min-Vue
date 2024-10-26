@@ -24,6 +24,7 @@ import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { callWithErrorHandling } from "./errorHanding";
 import { initProps, normalizePropsOptions } from "./componentProps";
 import { createAppContext } from "./apiCreateApp";
+import { emit } from "./componentEmits";
 
 let uid = 0;
 
@@ -35,7 +36,6 @@ const emptyAppContext = createAppContext();
  * @returns 返回创建的组件实例
  */
 export function createComponentInstance(vnode, parent) {
-  console.log("==========createComponentInstance=======", vnode.type.props);
   // createAppContext
   const appContext =
     (parent ? parent.appContext : vnode.appContext) || emptyAppContext;
@@ -45,6 +45,9 @@ export function createComponentInstance(vnode, parent) {
     uid: uid++,
     vnode,
     type,
+    parent,
+    appContext,
+    subTree: null!, // will be set synchronously right after creation
     render: null,
     proxy: null,
     exposed: null,
@@ -71,6 +74,7 @@ export function createComponentInstance(vnode, parent) {
     refs: EMPTY_OBJ,
     setupState: EMPTY_OBJ,
     setupContext: null,
+    emit: null, // 事件的触发
 
     // 生命周期钩子标志
     // 这里不使用枚举是因为它会导致计算属性
@@ -79,6 +83,8 @@ export function createComponentInstance(vnode, parent) {
     isDeactivated: false,
   };
   instance.ctx = { _: instance };
+  instance.emit = emit.bind(null, instance);
+  console.log("==========createComponentInstance=======", instance);
 
   return instance;
 }

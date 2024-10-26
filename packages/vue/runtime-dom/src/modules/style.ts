@@ -16,7 +16,6 @@
 type Style = string | Record<string, string | string[]> | null;
 
 export function patchStyle(el: Element, prev, next) {
-  console.log("style", prev, next);
   const style = (el as HTMLElement).style;
   //   const isStringClass = isString(next);
   if (next == null) {
