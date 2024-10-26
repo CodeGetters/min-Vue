@@ -11,6 +11,12 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <script>
+      /**
+       * 1、两个子节点都是文本
+       * 2、旧节点是文字，新节点是数组
+       * 3、
+       */
+
       const { createApp, h, reactive } = libRuntimeDom;
       // const { createApp, h, reactive } = Vue;
       const App = {
@@ -20,9 +26,9 @@
             state.name = "lisi";
           };
 
-          // setTimeout(() => {
-          //   state.isFlag = true;
-          // }, 1500);
+          setTimeout(() => {
+            state.isFlag = true;
+          }, 1500);
 
           return {
             state,
@@ -31,11 +37,9 @@
         },
         render(proxy) {
           if (proxy.state.isFlag) {
-            return h(
-              "div",
-              { style: { color: "red" }, onClick: proxy.fn },
-              "proxy"
-            );
+            return h("div", { style: { color: "red" }, onClick: proxy.fn }, [
+              h("p", {}, "hello"),
+            ]);
           } else {
             return h(
               "div",
@@ -43,7 +47,7 @@
                 style: { color: "blue", background: "pink" },
                 onClick: proxy.fn,
               },
-              proxy.state.name
+              "proxy.state.name"
             );
           }
         },

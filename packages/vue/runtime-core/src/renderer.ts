@@ -213,7 +213,6 @@ function baseCreateRenderer(options, createHydrationFns?): any {
       for (const key in newProps) {
         const next = newProps[key];
         const prev = oldProps[key];
-        console.log("==========newProps=========", prev, next);
         if (next !== prev && key !== "value") {
           hostPatchProp(el, key, prev, next);
         }
@@ -228,13 +227,65 @@ function baseCreateRenderer(options, createHydrationFns?): any {
     console.log("==========patchChildren=========");
     const c1 = n1 && n1.children;
     const c2 = n2.children;
+    const { shapeFlag } = n2;
     const prevShapeFlag = n1 ? n1.shapeFlag : 0;
 
     // child 有三种可能性：text、array、no children
 
-    if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
-      console.log("==========patchChildren=========", c2);
-      hostSetElementText(container, c2);
+    // 新节点是文本
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // 旧节点是数组
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        unmountChildren(n1.children, parentComponent);
+      }
+      // 旧节点是文本、数组
+      if (c1 !== c2) {
+        hostSetElementText(container, c2);
+      }
+    } else {
+      // 新节点是数组
+
+      // 新旧节点都是数组
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          patchKeyedChildren(c1, c2, container, anchor, parentComponent);
+        } else {
+          // 旧节点是数组，新节点是空数组，只需要卸载旧节点
+          unmountChildren(c1, parentComponent);
+        }
+      } else {
+        // 旧节点是文本
+        hostSetElementText(container, "");
+        mountChildren(c2, container, anchor, parentComponent);
+      }
+    }
+  };
+
+  const patchKeyedChildren = (
+    c1,
+    c2,
+    container,
+    parentAnchor,
+    parentComponent
+  ) => {
+    console.log("==========patchKeyedChildren=========");
+    // vue2 是双指针
+    // vue3 比较复杂，分三部分：1、头部比对 2、尾部比对 3、中间比对
+    let i = 0;
+    const l2 = c2.length;
+    let e1 = c1.length - 1; // c1 最大索引
+    let e2 = l2 - 1; // c2 最大索引
+
+    // 1、sync from start
+
+    // 2、sync from end
+
+    // 3、sync from middle
+  };
+
+  const unmountChildren = (children, parentComponent) => {
+    for (let i = 0; i < children.length; i++) {
+      unmount(children[i], parentComponent);
     }
   };
 
