@@ -203,3 +203,17 @@ export const toHandlerKey: <T extends string>(
     return s as T extends "" ? "" : `on${Capitalize<T>}`;
   }
 );
+
+/**
+ * 调用数组中的所有函数
+ *
+ * @param {Function[]} fns 要调用的函数数组
+ * @param {...any[]} arg 传递给每个函数的参数
+ * @returns {void}
+ */
+export function invokeArrayFns(fns: Function[], ...arg: any[]): void {
+  for (let i = 0; i < fns.length; i++) {
+    // 调用每个函数，并传入相同的参数
+    fns[i](...arg);
+  }
+}

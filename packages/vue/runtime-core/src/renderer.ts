@@ -41,7 +41,7 @@ import { createComponentInstance, setupComponent } from "./component";
 import { ShapeFlags } from "./shapeFlags";
 import { Comment, isSameVNodeType, normalizeVNode, Text } from "./vnode";
 import { renderComponentRoot } from "./componentRenderUtils";
-import { EMPTY_OBJ } from "@mini/shared";
+import { EMPTY_OBJ, invokeArrayFns } from "@mini/shared";
 
 export type Data = Record<string, unknown>;
 
@@ -466,22 +466,36 @@ function baseCreateRenderer(options, createHydrationFns?): any {
     effect(function componentEffect() {
       // 第一次加载
       if (!instance.isMounted) {
-        console.log("==========首次加载==========", instance);
+        console.log("==========首次加载==========");
+        const { bm, m } = instance;
+        if (bm) {
+          invokeArrayFns(bm);
+        }
         const subTree = (instance.subTree = renderComponentRoot(instance));
         // const proxy = instance.proxy;
         // const vnode = instance.render.call(proxy, proxy);
         // console.log("渲染节点 vnode", vnode); --> 这里渲染节点 vnode
         // 渲染子树
         patch(null, subTree, container);
+        if (m) {
+          invokeArrayFns(m);
+        }
         initialVNode.el = subTree.el;
         instance.isMounted = true;
       } else {
         console.log("==========触发更新操作==========");
+        let { next, bu, u, parent, vnode } = instance;
+        if (bu) {
+          invokeArrayFns(bu);
+        }
         // 比对节点 diff
         const nextTree = renderComponentRoot(instance);
         const prevTree = instance.subTree;
         instance.subTree = nextTree;
         patch(prevTree, nextTree, container);
+        if (u) {
+          invokeArrayFns(u);
+        }
       }
     });
   };

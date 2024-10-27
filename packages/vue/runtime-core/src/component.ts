@@ -76,11 +76,25 @@ export function createComponentInstance(vnode, parent) {
     setupContext: null,
     emit: null, // 事件的触发
 
-    // 生命周期钩子标志
-    // 这里不使用枚举是因为它会导致计算属性
+    // lifecycle hooks
+    // not using enums here because it results in computed properties
     isMounted: false,
     isUnmounted: false,
     isDeactivated: false,
+    bc: null,
+    c: null,
+    bm: null,
+    m: null,
+    bu: null,
+    u: null,
+    um: null,
+    bum: null,
+    da: null,
+    a: null,
+    rtg: null,
+    rtc: null,
+    ec: null,
+    sp: null,
   };
   instance.ctx = { _: instance };
   instance.emit = emit.bind(null, instance);
@@ -95,7 +109,6 @@ export function createComponentInstance(vnode, parent) {
  */
 export function setupComponent(instance, isSSR = false, optimized = false) {
   console.log("---------setupComponent---------", instance.props);
-  // TODO:错误在这之后---大概是 【initProps】、【initProps】
   const { props, children } = instance.vnode;
   const isStateful = isStatefulComponent(instance);
   // 根据 props 解析到组件实例上
@@ -130,6 +143,8 @@ function setupStatefulComponent(instance) {
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandlers);
   const { setup } = Component;
   if (setup) {
+    // 在setup之前设置 currentInstance
+    currentInstance = instance;
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null);
     // 调用 setup 函数，传入 props 和 setupContext
@@ -138,6 +153,7 @@ function setupStatefulComponent(instance) {
     // ]);
     setCurrentInstance(instance);
     const setupResult = setup(instance.props, setupContext);
+    currentInstance = null;
     setCurrentInstance(null);
     // 调用组件的 render 函数，传入代理对象
     // Component.render(instance.proxy);
