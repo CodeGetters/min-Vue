@@ -37,7 +37,7 @@ export function patchEvent(el: Element, rawName, nextValue): void {
     existingInvoker.value = nextValue;
   } else {
     const [name, options] = parseName(rawName);
-    console.log("============patchEvent=========", name, options);
+    // console.log("============patchEvent=========", name, options);
     // 如果 nextValue 不为空，那么添加事件
     if (nextValue) {
       const invoker = (invokers[rawName] = createInvoker(

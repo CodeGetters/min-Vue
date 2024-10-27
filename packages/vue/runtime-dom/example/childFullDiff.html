@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app">15675</div>
+    <script src="../dist/libRuntimeDom.global.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script>
+      const { createApp, h, reactive } = libRuntimeDom;
+      // const { createApp, h, reactive } = Vue;
+      // [a, b, x, e, f]
+      // [a, b, c, d, e, f]
+      const App = {
+        setup(props, context) {
+          const state = reactive({ name: "zhangsan", isFlag: false });
+          const fn = () => {
+            state.name = "lisi";
+          };
+
+          setTimeout(() => {
+            state.isFlag = true;
+          }, 1500);
+
+          return {
+            state,
+            fn,
+          };
+        },
+        render(proxy) {
+          // 旧的少，新的多
+          // if (proxy.state.isFlag) {
+          //   return h(
+          //     "div",
+          //     {
+          //       onClick: proxy.fn,
+          //     },
+          //     [
+          //       h("div", { key: "a", style: { background: "blue" } }, "a"),
+          //       h("div", { key: "b", style: { background: "blue" } }, "b"),
+          //       h("div", { key: "c", style: { background: "red" } }, "c"),
+          //       // h("div", { key: "d", style: { background: "red" } }, "d"),
+          //       // h("div", { key: "e", style: { background: "blue" } }, "e"),
+          //       // h("div", { key: "f", style: { background: "blue" } }, "f"),
+          //     ]
+          //   );
+          // } else {
+          //   return h(
+          //     "div",
+          //     {
+          //       onClick: proxy.fn,
+          //     },
+          //     [
+          //       h("div", { key: "a", style: { color: "blue" } }, "a"),
+          //       h("div", { key: "b", style: { color: "blue" } }, "b"),
+          //       // h("div", { key: "x", style: { color: "blue" } }, "x"),
+          //       // h("div", { key: "e", style: { color: "blue" } }, "e"),
+          //       // h("div", { key: "f", style: { color: "blue" } }, "f"),
+          //     ]
+          //   );
+          // }
+          // 旧的多，新的少
+          // if (proxy.state.isFlag) {
+          //   return h(
+          //     "div",
+          //     {
+          //       onClick: proxy.fn,
+          //     },
+          //     [
+          //       h("div", { key: "a", style: { background: "blue" } }, "a"),
+          //       h("div", { key: "b", style: { background: "blue" } }, "b"),
+          //       // h("div", { key: "c", style: { background: "red" } }, "c"),
+          //       // h("div", { key: "d", style: { background: "red" } }, "d"),
+          //       // h("div", { key: "e", style: { background: "blue" } }, "e"),
+          //       // h("div", { key: "f", style: { background: "blue" } }, "f"),
+          //     ]
+          //   );
+          // } else {
+          //   return h(
+          //     "div",
+          //     {
+          //       onClick: proxy.fn,
+          //     },
+          //     [
+          //       h("div", { key: "a", style: { color: "blue" } }, "a"),
+          //       h("div", { key: "b", style: { color: "blue" } }, "b"),
+          //       h("div", { key: "x", style: { color: "blue" } }, "x"),
+          //       // h("div", { key: "e", style: { color: "blue" } }, "e"),
+          //       // h("div", { key: "f", style: { color: "blue" } }, "f"),
+          //     ]
+          //   );
+          // }
+          // 乱序
+          if (proxy.state.isFlag) {
+            return h(
+              "div",
+              {
+                onClick: proxy.fn,
+              },
+              [
+                h("div", { key: "a", style: { background: "blue" } }, "a"),
+                h("div", { key: "b", style: { background: "blue" } }, "b"),
+                h("div", { key: "c", style: { background: "red" } }, "c"),
+                h("div", { key: "d", style: { background: "red" } }, "d"),
+                h("div", { key: "e", style: { background: "blue" } }, "e"),
+                h("div", { key: "f", style: { background: "blue" } }, "f"),
+              ]
+            );
+          } else {
+            return h(
+              "div",
+              {
+                onClick: proxy.fn,
+              },
+              [
+                h("div", { key: "a", style: { color: "blue" } }, "a"),
+                h("div", { key: "b", style: { color: "blue" } }, "b"),
+                h("div", { key: "x", style: { color: "blue" } }, "x"),
+                h("div", { key: "e", style: { color: "blue" } }, "e"),
+                h("div", { key: "f", style: { color: "blue" } }, "f"),
+              ]
+            );
+          }
+        },
+      };
+      createApp(App).mount("#app");
+    </script>
+  </body>
+</html>

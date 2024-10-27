@@ -82,14 +82,14 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   const patch = (n1, n2, container, anchor = null, parentComponent = null) => {
     if (n1 === n2) return;
 
-    console.log(
-      "==========patch=========",
-      n1,
-      n2,
-      container,
-      anchor,
-      parentComponent
-    );
+    // console.log(
+    //   "==========patch=========",
+    //   n1,
+    //   n2,
+    //   container,
+    //   anchor,
+    //   parentComponent
+    // );
     // 判断是否不是同一个元素
     if (n1 && !isSameVNodeType(n1, n2)) {
       unmount(n1, parentComponent);
@@ -149,7 +149,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   /****************************处理元素**************************/
 
   const processElement = (n1, n2, container, anchor, parentComponent) => {
-    console.log("============processElement==========", n1, n2, container);
+    // console.log("============processElement==========", n1, n2, container);
     if (n1 == null) {
       mountElement(n2, container, anchor, parentComponent);
     } else {
@@ -158,7 +158,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   };
 
   const mountElement = (vnode, container, anchor, parentComponent) => {
-    console.log("===================mountElement==============", vnode);
+    // console.log("===================mountElement==============", vnode);
     // 创建元素
     const { props, shapeFlag } = vnode;
     let el;
@@ -201,7 +201,7 @@ function baseCreateRenderer(options, createHydrationFns?): any {
   };
 
   const patchProps = (el, oldProps, newProps, parentComponent) => {
-    console.log("==========patchProps=========", el, parentComponent);
+    // console.log("==========patchProps=========", el, parentComponent);
     if (oldProps !== newProps) {
       if (oldProps !== EMPTY_OBJ) {
         for (const key in oldProps) {
@@ -269,18 +269,142 @@ function baseCreateRenderer(options, createHydrationFns?): any {
     parentComponent
   ) => {
     console.log("==========patchKeyedChildren=========");
-    // vue2 是双指针
-    // vue3 比较复杂，分三部分：1、头部比对 2、尾部比对 3、中间比对
+
+    /**
+     * vue2 children diff 是双指针
+     * vue3 children diff 分三部分：1、头部比对 2、尾部比对 3、中间比对
+     */
     let i = 0;
     const l2 = c2.length;
     let e1 = c1.length - 1; // c1 最大索引
     let e2 = l2 - 1; // c2 最大索引
 
-    // 1、sync from start
+    /**
+     *
+     * 1、头部比对：从头部开始，依次比较两个节点，直到遇到不同的节点为止(sync from start)--->开始尾部比对
+     *
+     * e.g.
+     * c1: [a, b, x, e, f]     e1 = 4
+     * c2: [a, b, c, d, e, f]  e2 = 5
+     *
+     * i = 0 从头开始比较
+     * ------------------------------------------
+     *         指针         |  c1[i]  |  c2[i]   |
+     * ------------------------------------------
+     * i = 1  e1 = 4  e2=5  |   a     |   a 相比 |
+     * i = 2  e1 = 4  e2=5  |   b     |   b 相比 |
+     * i = 2  e1 = 4  e2=5  |   x     |   c 相比 |
+     * ------------------------------------------
+     * i = 2  e1 = 4  e2=5 时 c[i]!==c2[i] 停止头部比较
+     *
+     *
+     * 2、尾部比对和头部比对类似，从尾部开始，依次比较两个节点，直到遇到不同的节点为止(sync from end)--->开始中间比对
+     * e.g.
+     * c1: [a, b, x, e, f]     e1 = 4
+     * c2: [a, b, c, d, e, f]  e2 = 5
+     *
+     * i = 2 从尾部开始比较
+     * ------------------------------------------
+     *         指针         |  c1[e1]  |  c2[e2] |
+     * ------------------------------------------
+     * i = 2  e1 = 3  e2=4  |   f     |   f 相比 |
+     * i = 2  e1 = 2  e2=3  |   e     |   e 相比 |
+     * i = 2  e1 = 2  e2=3  |   x     |   d 相比 |
+     * ------------------------------------------
+     * i = 2  e1 = 2  e2=3 时 c[e1] !== c2[e2] 停止尾部比较
+     *
+     * 3、中间比对：中间比对需要判断新节点和旧节点长度分别进行处理
+     *     a.旧节点少，需要添加数据--->从头部还是开始添加数据?（同序列）
+     *     b.旧节点多，需要删除数据--->从头部还是开始删除数据?（同序列）
+     *     c.旧节点和新节点长度相同，需要比较数据(使用新的节点个数创建一个 map 来记录新节点，然后使用旧的节点去 map 中查找)
+     *
+     */
+
+    // 1、sync from end
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i];
+      const n2 = c2[i];
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, null, parentComponent);
+      } else {
+        break;
+      }
+      i++;
+    }
 
     // 2、sync from end
-
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1];
+      const n2 = c2[e2];
+      if (isSameVNodeType(n1, n2)) {
+        patch(n1, n2, container, null, parentComponent);
+      } else {
+        break;
+      }
+      e1--;
+      e2--;
+    }
     // 3、sync from middle
+    // 旧的节点少，新的节点多
+    // 3. common sequence + mount
+    if (i > e1) {
+      // 添加数据，但头部还是尾部?
+      if (i <= e2) {
+        const nextPos = e2 + 1; // 插入的位置
+        // 前追加：e2 + 1 < c2
+
+        const anchor = nextPos < l2 ? c2[nextPos].el : parentAnchor;
+        while (i <= e2) {
+          patch(null, c2[i++], container, anchor, parentComponent);
+        }
+      }
+      // 4. common sequence + unmount
+    } else if (i > e2) {
+      // 旧的节点多，新的节点少
+      // 删除数据，但头部还是尾部?
+      while (i <= e1) {
+        unmount(c1[i++], parentComponent);
+      }
+    } else {
+      // 5. unknown sequence
+      const s1 = i; // prev starting index
+      const s2 = i; // next starting index
+      const keyToNewIndexMap: Map<PropertyKey, number> = new Map();
+      for (let i = s2; i <= e2; i++) {
+        const nextChild = c2[i]; // 乱序的 vnode
+        if (nextChild.key !== null) {
+          keyToNewIndexMap.set(nextChild.key, i);
+        } else {
+          console.log("=======keyToNewIndexMap=========:需要唯一标识 key!");
+        }
+      }
+      const toBePatched = e2 - s2 + 1; // 新节点的个数
+      const newIndexToOldIndexMap = new Array(toBePatched).fill(0);
+      // 在旧的节点中查找新节点，如果找到，则进行 patch 操作，否则进行 unmount 操作
+      for (i = s1; i <= e1; i++) {
+        const prevChild = c1[i];
+        const newIndex = keyToNewIndexMap.get(prevChild.key);
+        if (newIndex === undefined) {
+          // 旧的在新的中不存在
+          unmount(prevChild, parentComponent);
+        } else {
+          newIndexToOldIndexMap[newIndex - s2] = i + 1; // 记录旧节点的索引
+          patch(prevChild, c2[newIndex], container, null, parentComponent);
+        }
+      }
+      // 完成以上内容还会有两个问题：1、新的节点没有挂载 2、位置不对
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = s2 + i;
+        const nextChild = c2[nextIndex];
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : parentAnchor;
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, anchor, parentComponent);
+        } else {
+          // TODO：性能可以进行优化
+          hostInsert(nextChild.el, container, anchor);
+        }
+      }
+    }
   };
 
   const unmountChildren = (children, parentComponent) => {

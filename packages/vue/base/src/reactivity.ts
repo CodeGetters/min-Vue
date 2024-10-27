@@ -11,7 +11,7 @@ class Dep {
   }
 
   notify() {
-    this.subscribers.forEach((effect) => {
+    this.subscribers.forEach((effect: Function) => {
       effect();
     });
   }
@@ -43,7 +43,7 @@ function getDep(target, key) {
   return dep;
 }
 
-const reactiveHandlers = {
+const reactiveHandlers: ProxyHandler<any> = {
   get(target, key, receiver) {
     const dep = getDep(target, key);
     dep.depend();
@@ -55,8 +55,6 @@ const reactiveHandlers = {
     dep.notify();
     return result;
   },
-  has() {},
-  ownKeys() {},
 };
 
 function mountApp(component, container) {
