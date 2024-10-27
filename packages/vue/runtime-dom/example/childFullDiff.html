@@ -63,6 +63,7 @@
           //     ]
           //   );
           // }
+
           // 旧的多，新的少
           // if (proxy.state.isFlag) {
           //   return h(
@@ -94,7 +95,40 @@
           //     ]
           //   );
           // }
+
           // 乱序
+          // if (proxy.state.isFlag) {
+          //   return h(
+          //     "div",
+          //     {
+          //       onClick: proxy.fn,
+          //     },
+          //     [
+          //       h("div", { key: "a", style: { background: "blue" } }, "a"),
+          //       h("div", { key: "b", style: { background: "blue" } }, "b"),
+          //       h("div", { key: "c", style: { background: "red" } }, "c"),
+          //       h("div", { key: "d", style: { background: "red" } }, "d"),
+          //       h("div", { key: "e", style: { background: "blue" } }, "e"),
+          //       h("div", { key: "f", style: { background: "blue" } }, "f"),
+          //     ]
+          //   );
+          // } else {
+          //   return h(
+          //     "div",
+          //     {
+          //       onClick: proxy.fn,
+          //     },
+          //     [
+          //       h("div", { key: "a", style: { color: "blue" } }, "a"),
+          //       h("div", { key: "b", style: { color: "blue" } }, "b"),
+          //       h("div", { key: "x", style: { color: "blue" } }, "x"),
+          //       h("div", { key: "e", style: { color: "blue" } }, "e"),
+          //       h("div", { key: "f", style: { color: "blue" } }, "f"),
+          //     ]
+          //   );
+          // }
+
+          // 最小递增子序列
           if (proxy.state.isFlag) {
             return h(
               "div",
@@ -102,12 +136,15 @@
                 onClick: proxy.fn,
               },
               [
-                h("div", { key: "a", style: { background: "blue" } }, "a"),
-                h("div", { key: "b", style: { background: "blue" } }, "b"),
-                h("div", { key: "c", style: { background: "red" } }, "c"),
+                h("div", { key: "a", style: { color: "blue" } }, "a"),
+                h("div", { key: "b", style: { color: "blue" } }, "b"),
+                h("div", { key: "c", style: { color: "blue" } }, "c"),
+                h("div", { key: "x", style: { background: "red" } }, "x"),
+                h("div", { key: "y", style: { background: "red" } }, "y"),
+                h("div", { key: "z", style: { background: "red" } }, "z"),
                 h("div", { key: "d", style: { background: "red" } }, "d"),
-                h("div", { key: "e", style: { background: "blue" } }, "e"),
-                h("div", { key: "f", style: { background: "blue" } }, "f"),
+                h("div", { key: "e", style: { color: "blue" } }, "e"),
+                h("div", { key: "f", style: { color: "blue" } }, "f"),
               ]
             );
           } else {
@@ -119,7 +156,11 @@
               [
                 h("div", { key: "a", style: { color: "blue" } }, "a"),
                 h("div", { key: "b", style: { color: "blue" } }, "b"),
-                h("div", { key: "x", style: { color: "blue" } }, "x"),
+                h("div", { key: "c", style: { color: "red" } }, "c"),
+                h("div", { key: "x", style: { color: "red" } }, "x"),
+                h("div", { key: "y", style: { color: "red" } }, "y"),
+                h("div", { key: "z", style: { color: "red" } }, "z"),
+                h("div", { key: "e", style: { color: "blue" } }, "e"),
                 h("div", { key: "e", style: { color: "blue" } }, "e"),
                 h("div", { key: "f", style: { color: "blue" } }, "f"),
               ]
